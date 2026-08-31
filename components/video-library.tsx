@@ -105,26 +105,51 @@ function Section({
   title,
   items,
   emptyText,
+  sortable = false,
 }: {
   title: string;
   items: LibraryItem[];
   emptyText: string;
+  sortable?: boolean;
 }) {
   const [query, setQuery] = useState("");
-  const filtered = items.filter((i) =>
+  const [sortBy, setSortBy] = useState<"name" | "date">("name");
+
+  let filtered = items.filter((i) =>
     i.title.toLowerCase().includes(query.trim().toLowerCase()),
   );
+  if (sortable) {
+    filtered = [...filtered].sort((a, b) =>
+      sortBy === "name"
+        ? a.title.localeCompare(b.title, undefined, { numeric: true })
+        : b.createdAt - a.createdAt,
+    );
+  }
 
   return (
     <section>
       <div className="mb-4 flex items-center justify-between gap-4">
         <h2 className="text-lg font-semibold">{title}</h2>
-        <Input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search…"
-          className="h-8 max-w-48"
-        />
+        <div className="flex items-center gap-2">
+          {sortable && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs"
+              onClick={() =>
+                setSortBy((s) => (s === "name" ? "date" : "name"))
+              }
+            >
+              Sort: {sortBy === "name" ? "Name" : "Newest"}
+            </Button>
+          )}
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search…"
+            className="h-8 max-w-48"
+          />
+        </div>
       </div>
       {filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground">
@@ -142,12 +167,16 @@ function Section({
 }
 
 export function VideoLibrary({ items }: { items: LibraryItem[] }) {
-  const recent = items
+  // Recently watched first; pad the row up to 6 with the next unwatched
+  // videos in course (name) order.
+  const watched = items
     .filter((i) => i.lastWatchedAt !== null)
-    .sort((a, b) => (b.lastWatchedAt ?? 0) - (a.lastWatchedAt ?? 0))
-    .slice(0, 6);
+    .sort((a, b) => (b.lastWatchedAt ?? 0) - (a.lastWatchedAt ?? 0));
+  const unwatched = items
+    .filter((i) => i.lastWatchedAt === null)
+    .sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true }));
+  const recent = [...watched, ...unwatched].slice(0, 6);
   const pinned = items.filter((i) => i.pinned);
-  const all = [...items].sort((a, b) => b.createdAt - a.createdAt);
 
   return (
     <div className="space-y-10">
@@ -156,8 +185,18 @@ export function VideoLibrary({ items }: { items: LibraryItem[] }) {
         items={recent}
         emptyText="Nothing watched yet."
       />
-      <Section title="Pinned" items={pinned} emptyText="No pinned videos." />
-      <Section title="All videos" items={all} emptyText="No videos yet." />
+      <Section
+        title="Pinned"
+        items={pinned}
+        emptyText="No pinned videos."
+        sortable
+      />
+      <Section
+        title="All videos"
+        items={items}
+        emptyText="No videos yet."
+        sortable
+      />
     </div>
   );
 }
