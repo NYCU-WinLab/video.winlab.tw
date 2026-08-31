@@ -28,7 +28,7 @@ export default async function WatchPage({
     );
 
   return (
-    <main className="mx-auto w-full max-w-4xl flex-1 p-6">
+    <main className="mx-auto w-full max-w-5xl flex-1 p-6">
       <VideoPlayer
         videoId={video.id}
         src={`/api/stream/${video.id}`}
