@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { SiteHeader } from "@/components/site-header";
 import { db } from "@/lib/db";
 import { formatDate, formatDuration } from "@/lib/format";
 import { videos, watchProgress } from "@/lib/schema";
@@ -34,6 +35,8 @@ export default async function HomePage() {
     );
 
   return (
+    <>
+    <SiteHeader />
     <main className="mx-auto w-full max-w-5xl flex-1 p-6">
       <h1 className="mb-6 text-2xl font-semibold">Videos</h1>
       {rows.length === 0 && (
@@ -71,5 +74,6 @@ export default async function HomePage() {
         })}
       </div>
     </main>
+    </>
   );
 }

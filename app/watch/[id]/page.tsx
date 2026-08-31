@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { VideoPlayer } from "@/components/video-player";
+import { SiteHeader } from "@/components/site-header";
 import { db } from "@/lib/db";
 import { videos, watchProgress } from "@/lib/schema";
 
@@ -27,13 +28,15 @@ export default async function WatchPage({
     );
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center p-6">
-      <h1 className="mb-4 text-xl font-semibold">{video.title}</h1>
-      <VideoPlayer
-        videoId={video.id}
-        src={`/api/stream/${video.id}`}
-        initialPosition={progress?.position ?? 0}
-      />
-    </main>
+    <>
+      <SiteHeader crumb={video.title} />
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center p-6">
+        <VideoPlayer
+          videoId={video.id}
+          src={`/api/stream/${video.id}`}
+          initialPosition={progress?.position ?? 0}
+        />
+      </main>
+    </>
   );
 }

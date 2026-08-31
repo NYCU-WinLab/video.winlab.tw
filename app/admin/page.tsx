@@ -1,6 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { SiteHeader } from "@/components/site-header";
 import { UploadDialog } from "@/components/upload-dialog";
 import {
   Table,
@@ -31,9 +32,10 @@ export default async function AdminPage() {
     .orderBy(desc(watchProgress.updatedAt));
 
   return (
+    <>
+    <SiteHeader crumb="Admin" />
     <main className="mx-auto w-full max-w-5xl flex-1 space-y-8 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Admin</h1>
+      <div className="flex items-center justify-end">
         <UploadDialog />
       </div>
 
@@ -116,5 +118,6 @@ export default async function AdminPage() {
         </Table>
       </section>
     </main>
+    </>
   );
 }
