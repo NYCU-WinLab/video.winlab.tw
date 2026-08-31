@@ -6,14 +6,31 @@ type Props = {
   videoId: string;
   src: string;
   initialPosition: number;
+  onTimeChange?: (t: number) => void;
+  registerSeek?: (seek: (t: number) => void) => void;
 };
 
 const HEARTBEAT_MS = 10_000;
 
-export function VideoPlayer({ videoId, src, initialPosition }: Props) {
+export function VideoPlayer({
+  videoId,
+  src,
+  initialPosition,
+  onTimeChange,
+  registerSeek,
+}: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const lastTimeRef = useRef(0);
   const accumulatedRef = useRef(0);
+
+  useEffect(() => {
+    registerSeek?.((t) => {
+      const video = videoRef.current;
+      if (!video) return;
+      video.currentTime = t;
+      video.play().catch(() => {});
+    });
+  }, [registerSeek]);
 
   const flush = useCallback(
     (useBeacon = false) => {
@@ -78,6 +95,7 @@ export function VideoPlayer({ videoId, src, initialPosition }: Props) {
         // Ignore seeks: only count small forward steps as watched time.
         if (delta > 0 && delta < 2) accumulatedRef.current += delta;
         lastTimeRef.current = t;
+        onTimeChange?.(t);
       }}
       onPause={() => flush()}
     />

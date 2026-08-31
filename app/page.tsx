@@ -39,7 +39,7 @@ export default async function HomePage() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto w-full max-w-5xl flex-1 p-6">
+      <main className="w-full flex-1 p-6">
         <VideoLibrary items={items} />
       </main>
     </>

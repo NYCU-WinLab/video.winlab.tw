@@ -36,7 +36,27 @@ function createDb(): BetterSQLite3Database<typeof schema> {
       created_at INTEGER NOT NULL,
       PRIMARY KEY (video_id, user_email)
     );
+    CREATE TABLE IF NOT EXISTS transcript_segments (
+      video_id TEXT NOT NULL,
+      idx INTEGER NOT NULL,
+      start REAL NOT NULL,
+      end REAL NOT NULL,
+      text TEXT NOT NULL,
+      speaker TEXT,
+      PRIMARY KEY (video_id, idx)
+    );
   `);
+  const videoCols = (
+    sqlite.prepare("PRAGMA table_info(videos)").all() as { name: string }[]
+  ).map((c) => c.name);
+  if (!videoCols.includes("transcript_status")) {
+    sqlite.exec(`
+      ALTER TABLE videos ADD COLUMN transcript_status TEXT NOT NULL DEFAULT 'none';
+      ALTER TABLE videos ADD COLUMN transcript_job_id TEXT;
+      ALTER TABLE videos ADD COLUMN transcript_token TEXT;
+      ALTER TABLE videos ADD COLUMN transcript_error TEXT;
+    `);
+  }
   return drizzle(sqlite, { schema });
 }
 

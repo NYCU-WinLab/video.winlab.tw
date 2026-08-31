@@ -15,7 +15,24 @@ export const videos = sqliteTable("videos", {
   duration: real("duration"),
   createdBy: text("created_by").notNull(),
   createdAt: integer("created_at").notNull(),
+  transcriptStatus: text("transcript_status").notNull().default("none"),
+  transcriptJobId: text("transcript_job_id"),
+  transcriptToken: text("transcript_token"),
+  transcriptError: text("transcript_error"),
 });
+
+export const transcriptSegments = sqliteTable(
+  "transcript_segments",
+  {
+    videoId: text("video_id").notNull(),
+    idx: integer("idx").notNull(),
+    start: real("start").notNull(),
+    end: real("end").notNull(),
+    text: text("text").notNull(),
+    speaker: text("speaker"),
+  },
+  (t) => [primaryKey({ columns: [t.videoId, t.idx] })],
+);
 
 export const watchProgress = sqliteTable(
   "watch_progress",

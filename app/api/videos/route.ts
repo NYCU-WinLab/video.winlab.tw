@@ -1,7 +1,9 @@
+import { after } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { davPut } from "@/lib/nextcloud";
 import { videos } from "@/lib/schema";
+import { submitTranscription } from "@/lib/transcribe";
 
 export const runtime = "nodejs";
 
@@ -39,7 +41,12 @@ export async function POST(req: Request) {
     duration: null,
     createdBy: session.user.email ?? "unknown",
     createdAt: Date.now(),
+    transcriptStatus: "pending",
+    transcriptJobId: null,
+    transcriptToken: null,
+    transcriptError: null,
   };
   await db.insert(videos).values(row);
+  after(() => submitTranscription(row));
   return Response.json(row, { status: 201 });
 }

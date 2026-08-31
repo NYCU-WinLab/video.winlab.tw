@@ -8,7 +8,7 @@ export async function SiteHeader({ crumb }: { crumb?: string }) {
 
   return (
     <header className="border-b">
-      <div className="mx-auto flex max-w-5xl items-center gap-2 px-6 py-3">
+      <div className="flex w-full items-center gap-2 px-6 py-3">
         <Link href="/" className="font-semibold">
           WinLab Video
         </Link>

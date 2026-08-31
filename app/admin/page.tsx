@@ -34,7 +34,7 @@ export default async function AdminPage() {
   return (
     <>
     <SiteHeader crumb="Admin" />
-    <main className="mx-auto w-full max-w-5xl flex-1 space-y-8 p-6">
+    <main className="w-full flex-1 space-y-8 p-6">
       <div className="flex items-center justify-end">
         <UploadDialog />
       </div>

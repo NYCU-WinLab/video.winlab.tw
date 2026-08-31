@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { auth } from "@/auth";
-import { VideoPlayer } from "@/components/video-player";
 import { SiteHeader } from "@/components/site-header";
+import { WatchView } from "@/components/watch-view";
 import { db } from "@/lib/db";
-import { videos, watchProgress } from "@/lib/schema";
+import { transcriptSegments, videos, watchProgress } from "@/lib/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -27,14 +27,32 @@ export default async function WatchPage({
       and(eq(watchProgress.videoId, id), eq(watchProgress.userEmail, email)),
     );
 
+  const segments =
+    video.transcriptStatus === "done"
+      ? await db
+          .select({
+            start: transcriptSegments.start,
+            end: transcriptSegments.end,
+            text: transcriptSegments.text,
+            speaker: transcriptSegments.speaker,
+          })
+          .from(transcriptSegments)
+          .where(eq(transcriptSegments.videoId, id))
+          .orderBy(asc(transcriptSegments.idx))
+      : [];
+
   return (
     <>
       <SiteHeader crumb={video.title} />
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center p-6">
-        <VideoPlayer
+      <main className="flex w-full flex-1 flex-col p-6">
+        <WatchView
           videoId={video.id}
           src={`/api/stream/${video.id}`}
           initialPosition={progress?.position ?? 0}
+          isAdmin={session?.user.isAdmin ?? false}
+          transcriptStatus={video.transcriptStatus}
+          transcriptError={video.transcriptError}
+          segments={segments}
         />
       </main>
     </>
