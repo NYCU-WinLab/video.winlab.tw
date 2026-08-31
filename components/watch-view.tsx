@@ -107,8 +107,8 @@ export function WatchView({
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 lg:flex-row lg:items-start">
-      <div className="flex min-w-0 flex-1 items-center justify-center overflow-hidden rounded-lg bg-black lg:h-[calc(100vh-10rem)]">
+    <div className="flex flex-1 flex-col gap-4 lg:h-[calc(100dvh-6.5rem)] lg:flex-row">
+      <div className="flex min-w-0 flex-1 items-center justify-center overflow-hidden rounded-lg bg-black lg:h-full">
         <VideoPlayer
           videoId={videoId}
           src={src}
@@ -118,7 +118,7 @@ export function WatchView({
         />
       </div>
 
-      <aside className="flex h-[45vh] flex-col rounded-lg border lg:h-[calc(100vh-10rem)] lg:w-96 lg:shrink-0">
+      <aside className="flex h-[45vh] flex-col rounded-lg border lg:h-full lg:w-96 lg:shrink-0">
         <div className="flex items-center justify-between border-b px-4 py-2">
           <h2 className="text-sm font-medium">Transcript</h2>
           {!following && segments.length > 0 && (
