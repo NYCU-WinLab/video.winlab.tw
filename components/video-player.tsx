@@ -81,7 +81,7 @@ export function VideoPlayer({
       src={src}
       controls
       playsInline
-      className="w-full rounded-lg bg-black"
+      className="max-h-full w-full object-contain"
       onLoadedMetadata={(e) => {
         const video = e.currentTarget;
         if (initialPosition > 0 && initialPosition < video.duration - 5) {

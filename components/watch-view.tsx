@@ -108,7 +108,7 @@ export function WatchView({
 
   return (
     <div className="flex flex-1 flex-col gap-4 lg:flex-row lg:items-start">
-      <div className="min-w-0 flex-1">
+      <div className="flex min-w-0 flex-1 items-center justify-center overflow-hidden rounded-lg bg-black lg:h-[calc(100vh-10rem)]">
         <VideoPlayer
           videoId={videoId}
           src={src}
