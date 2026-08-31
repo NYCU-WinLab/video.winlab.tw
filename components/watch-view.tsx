@@ -46,12 +46,10 @@ export function WatchView({
   const [error, setError] = useState(transcriptError);
   const [segments, setSegments] = useState(initialSegments);
   const [currentTime, setCurrentTime] = useState(initialPosition);
-  const [following, setFollowing] = useState(true);
 
   const seekRef = useRef<((t: number) => void) | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLButtonElement>(null);
-  const programmaticScrollRef = useRef(false);
 
   const registerSeek = useCallback((fn: (t: number) => void) => {
     seekRef.current = fn;
@@ -81,18 +79,18 @@ export function WatchView({
 
   const activeIdx = segments.findLastIndex((s) => s.start <= currentTime);
 
-  // Follow playback like a live chat unless the user scrolled away.
+  // Follow playback like a live chat; while paused there are no time
+  // updates, so the list simply stays where it is.
   useEffect(() => {
-    if (!following || activeIdx < 0) return;
+    if (activeIdx < 0) return;
     const list = listRef.current;
     const el = activeRef.current;
     if (!list || !el) return;
-    programmaticScrollRef.current = true;
     list.scrollTo({
       top: el.offsetTop - list.clientHeight / 2 + el.clientHeight / 2,
       behavior: "smooth",
     });
-  }, [activeIdx, following]);
+  }, [activeIdx]);
 
   async function retry() {
     setStatus("pending");
@@ -119,32 +117,12 @@ export function WatchView({
       </div>
 
       <aside className="flex h-[45vh] flex-col rounded-lg border lg:h-full lg:w-96 lg:shrink-0">
-        <div className="flex items-center justify-between border-b px-4 py-2">
+        <div className="border-b px-4 py-2">
           <h2 className="text-sm font-medium">Transcript</h2>
-          {!following && segments.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs"
-              onClick={() => setFollowing(true)}
-            >
-              Resume auto-scroll
-            </Button>
-          )}
         </div>
 
         {status === "done" && segments.length > 0 ? (
-          <div
-            ref={listRef}
-            className="flex-1 overflow-y-auto p-2"
-            onScroll={() => {
-              if (programmaticScrollRef.current) {
-                programmaticScrollRef.current = false;
-                return;
-              }
-              setFollowing(false);
-            }}
-          >
+          <div ref={listRef} className="flex-1 overflow-y-auto p-2">
             {segments.map((seg, i) => (
               <button
                 key={i}

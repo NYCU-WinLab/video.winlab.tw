@@ -42,6 +42,7 @@ export const watchProgress = sqliteTable(
     userName: text("user_name").notNull(),
     position: real("position").notNull().default(0),
     watchedSeconds: real("watched_seconds").notNull().default(0),
+    createdAt: integer("created_at").notNull().default(0),
     updatedAt: integer("updated_at").notNull(),
   },
   (t) => [primaryKey({ columns: [t.videoId, t.userEmail] })],

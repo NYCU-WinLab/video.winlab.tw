@@ -49,6 +49,17 @@ function createDb(): BetterSQLite3Database<typeof schema> {
   const videoCols = (
     sqlite.prepare("PRAGMA table_info(videos)").all() as { name: string }[]
   ).map((c) => c.name);
+  const progressCols = (
+    sqlite.prepare("PRAGMA table_info(watch_progress)").all() as {
+      name: string;
+    }[]
+  ).map((c) => c.name);
+  if (!progressCols.includes("created_at")) {
+    sqlite.exec(`
+      ALTER TABLE watch_progress ADD COLUMN created_at INTEGER NOT NULL DEFAULT 0;
+      UPDATE watch_progress SET created_at = updated_at WHERE created_at = 0;
+    `);
+  }
   if (!videoCols.includes("transcript_status")) {
     sqlite.exec(`
       ALTER TABLE videos ADD COLUMN transcript_status TEXT NOT NULL DEFAULT 'none';

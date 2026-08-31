@@ -1,8 +1,10 @@
-import { desc, eq } from "drizzle-orm";
+import Link from "next/link";
+import { count, desc, eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { SiteHeader } from "@/components/site-header";
 import { UploadDialog } from "@/components/upload-dialog";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -22,102 +24,74 @@ export default async function AdminPage() {
   if (!session?.user.isAdmin) redirect("/");
 
   const videoRows = await db
-    .select()
+    .select({
+      video: videos,
+      viewers: count(watchProgress.userEmail),
+    })
     .from(videos)
+    .leftJoin(watchProgress, eq(watchProgress.videoId, videos.id))
+    .groupBy(videos.id)
     .orderBy(desc(videos.createdAt));
-  const progressRows = await db
-    .select({ progress: watchProgress, video: videos })
-    .from(watchProgress)
-    .innerJoin(videos, eq(videos.id, watchProgress.videoId))
-    .orderBy(desc(watchProgress.updatedAt));
 
   return (
     <>
-    <SiteHeader crumb="Admin" />
-    <main className="w-full flex-1 space-y-8 p-6">
-      <div className="flex items-center justify-end">
-        <UploadDialog />
-      </div>
-
-      <section>
-        <h2 className="mb-3 text-lg font-medium">Videos</h2>
+      <SiteHeader crumb="Admin" />
+      <main className="w-full flex-1 space-y-6 p-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-lg font-semibold">Videos</h1>
+          <UploadDialog />
+        </div>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Title</TableHead>
               <TableHead>Size</TableHead>
               <TableHead>Duration</TableHead>
+              <TableHead>Transcript</TableHead>
+              <TableHead>Viewers</TableHead>
               <TableHead>Uploaded</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {videoRows.map((v) => (
-              <TableRow key={v.id}>
-                <TableCell>{v.title}</TableCell>
-                <TableCell>{formatBytes(v.size)}</TableCell>
+            {videoRows.map(({ video, viewers }) => (
+              <TableRow key={video.id}>
                 <TableCell>
-                  {v.duration ? formatDuration(v.duration) : "—"}
+                  <Link
+                    href={`/admin/videos/${video.id}`}
+                    className="font-medium hover:underline"
+                  >
+                    {video.title}
+                  </Link>
                 </TableCell>
-                <TableCell>{formatDate(v.createdAt)}</TableCell>
+                <TableCell>{formatBytes(video.size)}</TableCell>
+                <TableCell>
+                  {video.duration ? formatDuration(video.duration) : "—"}
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant={
+                      video.transcriptStatus === "error"
+                        ? "destructive"
+                        : "secondary"
+                    }
+                  >
+                    {video.transcriptStatus}
+                  </Badge>
+                </TableCell>
+                <TableCell>{viewers}</TableCell>
+                <TableCell>{formatDate(video.createdAt)}</TableCell>
               </TableRow>
             ))}
             {videoRows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="text-muted-foreground">
+                <TableCell colSpan={6} className="text-muted-foreground">
                   No videos yet.
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
-      </section>
-
-      <section>
-        <h2 className="mb-3 text-lg font-medium">Watch activity</h2>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Viewer</TableHead>
-              <TableHead>Video</TableHead>
-              <TableHead>Position</TableHead>
-              <TableHead>Watched</TableHead>
-              <TableHead>Last active</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {progressRows.map(({ progress, video }) => {
-              const percent = video.duration
-                ? Math.min(100, Math.round((progress.position / video.duration) * 100))
-                : null;
-              return (
-                <TableRow key={`${progress.videoId}-${progress.userEmail}`}>
-                  <TableCell>
-                    {progress.userName}
-                    <span className="block text-xs text-muted-foreground">
-                      {progress.userEmail}
-                    </span>
-                  </TableCell>
-                  <TableCell>{video.title}</TableCell>
-                  <TableCell>
-                    {formatDuration(progress.position)}
-                    {percent !== null && ` (${percent}%)`}
-                  </TableCell>
-                  <TableCell>{formatDuration(progress.watchedSeconds)}</TableCell>
-                  <TableCell>{formatDate(progress.updatedAt)}</TableCell>
-                </TableRow>
-              );
-            })}
-            {progressRows.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={5} className="text-muted-foreground">
-                  No activity yet.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </section>
-    </main>
+      </main>
     </>
   );
 }

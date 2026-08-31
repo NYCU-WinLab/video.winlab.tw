@@ -37,6 +37,7 @@ export async function POST(req: Request) {
       userName: session.user.name ?? session.user.email,
       position,
       watchedSeconds: boundedDelta,
+      createdAt: Date.now(),
       updatedAt: Date.now(),
     })
     .onConflictDoUpdate({
