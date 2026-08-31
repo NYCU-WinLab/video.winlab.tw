@@ -30,5 +30,16 @@ export const watchProgress = sqliteTable(
   (t) => [primaryKey({ columns: [t.videoId, t.userEmail] })],
 );
 
+export const pins = sqliteTable(
+  "pins",
+  {
+    videoId: text("video_id").notNull(),
+    userEmail: text("user_email").notNull(),
+    createdAt: integer("created_at").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.videoId, t.userEmail] })],
+);
+
 export type Video = typeof videos.$inferSelect;
 export type WatchProgress = typeof watchProgress.$inferSelect;
+export type Pin = typeof pins.$inferSelect;

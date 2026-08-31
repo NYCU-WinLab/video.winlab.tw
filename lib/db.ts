@@ -30,6 +30,12 @@ function createDb(): BetterSQLite3Database<typeof schema> {
       updated_at INTEGER NOT NULL,
       PRIMARY KEY (video_id, user_email)
     );
+    CREATE TABLE IF NOT EXISTS pins (
+      video_id TEXT NOT NULL,
+      user_email TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      PRIMARY KEY (video_id, user_email)
+    );
   `);
   return drizzle(sqlite, { schema });
 }
