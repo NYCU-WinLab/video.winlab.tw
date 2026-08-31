@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# video.winlab.tw
 
-## Getting Started
+Lab video portal. Admins upload videos, lab members sign in with Google to
+watch them, and the site records where each viewer stopped and how long they
+actually watched. Videos are stored on the lab Nextcloud over WebDAV and
+streamed through the app with HTTP Range support, so nothing is publicly
+reachable without a signed-in session.
 
-First, run the development server:
+## Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+| Layer | Choice |
+|-------|--------|
+| Framework | Next.js (App Router) + TypeScript |
+| UI | shadcn/ui + Tailwind CSS |
+| Auth | Auth.js (NextAuth v5) with Google OAuth, JWT sessions |
+| Database | SQLite via Drizzle ORM (better-sqlite3) |
+| Video storage | Nextcloud WebDAV (`video-svc` service account) |
+
+## How it works
+
+- `middleware.ts` requires a session on every page and API route except
+  `/login` and the auth callbacks. `/admin` additionally requires an email
+  listed in `ADMIN_EMAILS`.
+- Upload (`POST /api/videos`, admin only) streams the file to Nextcloud at
+  `files/video-svc/videos/<id>-<name>` and records metadata in SQLite.
+- Playback (`GET /api/stream/:id`) proxies WebDAV and forwards the `Range`
+  header, so seeking works without downloading the whole file.
+- The player posts a heartbeat to `POST /api/progress` every 10 seconds and on
+  pause/leave: current position plus seconds actually watched (seeks are not
+  counted). The admin page shows per-viewer position, watch time, and last
+  activity.
+
+## Development
+
+```sh
+bun install
+cp .env.example .env.local  # fill in values
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Google OAuth needs `http://localhost:3000/api/auth/callback/google` (and the
+production URL) registered as an authorized redirect URI.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Notes
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Videos should be H.264 MP4 with the moov atom up front for instant
+  progressive playback: `ffmpeg -i in.mp4 -c copy -movflags +faststart out.mp4`.
+- Upload buffers through the app process; keep files to a few GB or upload
+  directly to the Nextcloud folder and insert the metadata row manually.
+- SQLite lives at `DATABASE_PATH` (default `./data/app.db`); the schema is
+  created automatically on first run.
