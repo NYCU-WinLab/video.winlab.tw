@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { count, desc, eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { LinkRow } from "@/components/link-row";
 import { SiteHeader } from "@/components/site-header";
 import { UploadDialog } from "@/components/upload-dialog";
 import { Badge } from "@/components/ui/badge";
@@ -54,15 +54,8 @@ export default async function AdminPage() {
           </TableHeader>
           <TableBody>
             {videoRows.map(({ video, viewers }) => (
-              <TableRow key={video.id}>
-                <TableCell>
-                  <Link
-                    href={`/admin/videos/${video.id}`}
-                    className="font-medium hover:underline"
-                  >
-                    {video.title}
-                  </Link>
-                </TableCell>
+              <LinkRow key={video.id} href={`/admin/videos/${video.id}`}>
+                <TableCell className="font-medium">{video.title}</TableCell>
                 <TableCell>{formatBytes(video.size)}</TableCell>
                 <TableCell>
                   {video.duration ? formatDuration(video.duration) : "—"}
@@ -80,7 +73,7 @@ export default async function AdminPage() {
                 </TableCell>
                 <TableCell>{viewers}</TableCell>
                 <TableCell>{formatDate(video.createdAt)}</TableCell>
-              </TableRow>
+              </LinkRow>
             ))}
             {videoRows.length === 0 && (
               <TableRow>
