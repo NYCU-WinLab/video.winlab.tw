@@ -3,7 +3,6 @@ import { and, eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { VideoPlayer } from "@/components/video-player";
 import { db } from "@/lib/db";
-import { formatDate } from "@/lib/format";
 import { videos, watchProgress } from "@/lib/schema";
 
 export const dynamic = "force-dynamic";
@@ -28,16 +27,13 @@ export default async function WatchPage({
     );
 
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 p-6">
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center p-6">
+      <h1 className="mb-4 text-xl font-semibold">{video.title}</h1>
       <VideoPlayer
         videoId={video.id}
         src={`/api/stream/${video.id}`}
         initialPosition={progress?.position ?? 0}
       />
-      <h1 className="mt-4 text-xl font-semibold">{video.title}</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Uploaded {formatDate(video.createdAt)} by {video.createdBy}
-      </p>
     </main>
   );
 }
