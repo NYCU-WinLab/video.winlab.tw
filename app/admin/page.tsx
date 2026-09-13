@@ -1,4 +1,5 @@
 import { asc, count, eq, sql } from "drizzle-orm";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { LinkRow } from "@/components/link-row";
@@ -15,7 +16,7 @@ import {
 import { db } from "@/lib/db";
 import { formatBytes, formatDate } from "@/lib/format";
 import { videos, watchProgress } from "@/lib/schema";
-import { describeJob, syncPending } from "@/lib/transcribe";
+import { describeJob, recentlySynced, syncPending } from "@/lib/transcribe";
 import { Badge } from "@/components/ui/badge";
 
 export const dynamic = "force-dynamic";
@@ -36,7 +37,9 @@ export default async function AdminPage() {
 
   // Pull live status from transcribe for anything still pending; this also
   // imports finished transcripts nobody has opened yet.
-  const live = await syncPending(videoRows.map((r) => r.video));
+  const live = recentlySynced()
+    ? new Map()
+    : await syncPending(videoRows.map((r) => r.video));
   const fresh = await db.select().from(videos);
   const statusOf = new Map(fresh.map((v) => [v.id, v.transcriptStatus]));
 
@@ -62,7 +65,14 @@ export default async function AdminPage() {
               const status = statusOf.get(video.id) ?? video.transcriptStatus;
               return (
                 <LinkRow key={video.id} href={`/admin/videos/${video.id}`}>
-                  <TableCell>{video.title}</TableCell>
+                  <TableCell>
+                    <Link
+                      href={`/admin/videos/${video.id}`}
+                      className="hover:underline"
+                    >
+                      {video.title}
+                    </Link>
+                  </TableCell>
                   <TableCell>{viewers}</TableCell>
                   <TableCell>
                     <Badge

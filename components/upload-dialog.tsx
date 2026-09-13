@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from "@/lib/limits";
 
 export function UploadDialog() {
   const router = useRouter();
@@ -32,6 +33,11 @@ export function UploadDialog() {
       };
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) return resolve();
+        if (xhr.status === 413) {
+          return reject(
+            new Error(`File is larger than the ${MAX_UPLOAD_LABEL} upload limit`),
+          );
+        }
         try {
           reject(new Error(JSON.parse(xhr.responseText).error));
         } catch {
@@ -46,6 +52,11 @@ export function UploadDialog() {
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
+    const file = form.get("file");
+    if (file instanceof File && file.size > MAX_UPLOAD_BYTES) {
+      toast.error(`File is larger than the ${MAX_UPLOAD_LABEL} upload limit`);
+      return;
+    }
     setUploading(true);
     setPercent(0);
     try {
@@ -81,7 +92,9 @@ export function UploadDialog() {
             <Input id="title" name="title" required disabled={uploading} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="file">File (mp4, H.264 recommended)</Label>
+            <Label htmlFor="file">
+              File (mp4, H.264 recommended, up to {MAX_UPLOAD_LABEL})
+            </Label>
             <Input
               id="file"
               name="file"

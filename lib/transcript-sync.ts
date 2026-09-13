@@ -3,23 +3,10 @@ import { db } from "./db";
 import { videos } from "./schema";
 import { syncPending } from "./transcribe";
 
-const INTERVAL_MS = 5 * 60_000;
+export const INTERVAL_MS = 5 * 60_000;
 const FIRST_RUN_MS = 15_000;
 
-// instrumentation.ts and route handlers are bundled separately, so module
-// state is not shared; keep it on globalThis.
-const g = globalThis as unknown as {
-  transcriptSync?: { started: boolean; running: boolean; lastSyncAt: number | null };
-};
-const state = (g.transcriptSync ??= {
-  started: false,
-  running: false,
-  lastSyncAt: null,
-});
-
-export function lastSyncAt() {
-  return state.lastSyncAt;
-}
+import { syncState as state } from "./sync-state";
 
 /** Poll transcribe for every pending video so transcripts land without
  * anyone opening the admin page. Runs in-process, once per server. */

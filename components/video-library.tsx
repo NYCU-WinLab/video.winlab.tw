@@ -1,5 +1,6 @@
 "use client";
 
+import { Film } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useLibraryQuery } from "@/components/library-toolbar";
@@ -21,13 +22,21 @@ function VideoCard({ item }: { item: LibraryItem }) {
       : 0;
 
   return (
-    <Link href={`/watch/${item.id}`} className="group block">
+    <Link
+      href={`/watch/${item.id}`}
+      className="group block rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
       <div className="relative aspect-video overflow-hidden rounded-2xl bg-muted">
+        {thumbFailed && (
+          <div className="flex size-full items-center justify-center text-muted-foreground">
+            <Film className="size-8" />
+          </div>
+        )}
         {!thumbFailed && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={`/api/thumb/${item.id}`}
-            alt=""
+            alt={item.title}
             loading="lazy"
             onError={() => setThumbFailed(true)}
             className="size-full object-cover"

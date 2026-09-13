@@ -5,16 +5,10 @@ import { db } from "@/lib/db";
 import { davPut } from "@/lib/nextcloud";
 import { videos } from "@/lib/schema";
 import { ensureThumbnail, probeDuration } from "@/lib/thumbnail";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from "@/lib/limits";
 import { submitTranscription } from "@/lib/transcribe";
 
 export const runtime = "nodejs";
-
-export async function GET() {
-  const session = await auth();
-  if (!session) return Response.json({ error: "unauthorized" }, { status: 401 });
-  const rows = await db.select().from(videos);
-  return Response.json(rows);
-}
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -22,11 +16,25 @@ export async function POST(req: Request) {
     return Response.json({ error: "forbidden" }, { status: 403 });
   }
 
+  const declared = Number(req.headers.get("content-length") ?? 0);
+  if (declared > MAX_UPLOAD_BYTES) {
+    return Response.json(
+      { error: `file is larger than the ${MAX_UPLOAD_LABEL} upload limit` },
+      { status: 413 },
+    );
+  }
+
   const form = await req.formData();
   const file = form.get("file");
   const title = form.get("title");
   if (!(file instanceof File) || typeof title !== "string" || !title.trim()) {
     return Response.json({ error: "file and title are required" }, { status: 400 });
+  }
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return Response.json(
+      { error: `file is larger than the ${MAX_UPLOAD_LABEL} upload limit` },
+      { status: 413 },
+    );
   }
 
   const id = crypto.randomUUID();
