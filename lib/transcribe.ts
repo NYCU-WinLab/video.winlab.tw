@@ -79,28 +79,69 @@ export async function submitTranscription(video: Video) {
   }
 }
 
-/** Poll the transcribe job for a pending video; on done, ingest segments. */
-export async function refreshTranscription(video: Video) {
-  if (
-    video.transcriptStatus !== "pending" ||
-    !video.transcriptJobId ||
-    !video.transcriptToken
-  ) {
-    return;
-  }
-  const qs = `owner_token=${encodeURIComponent(video.transcriptToken)}`;
-  const res = await fetch(
-    `${baseUrl()}/api/jobs/${video.transcriptJobId}?${qs}`,
+export type JobLive = {
+  stage: string;
+  progress: number;
+  queuePosition: number | null;
+};
+
+/** Job ids are only valid when the submit response actually carried one;
+ * an older API version left the literal string "undefined" behind. */
+export function hasJob(video: Pick<Video, "transcriptJobId" | "transcriptToken">) {
+  return (
+    !!video.transcriptJobId &&
+    video.transcriptJobId !== "undefined" &&
+    !!video.transcriptToken
   );
+}
+
+/** Job page on transcribe.winlab.tw. Only readable in a browser that holds
+ * the owner token, but handy for the admin who submitted it. */
+export function transcribeJobUrl(video: Video) {
+  return hasJob(video) ? `${baseUrl()}/jobs/${video.transcriptJobId}` : null;
+}
+
+/** Poll the transcribe job for a pending video; on done, ingest segments.
+ * Returns the live upstream status when it was reachable. */
+export async function refreshTranscription(
+  video: Video,
+): Promise<JobLive | null> {
+  if (video.transcriptStatus !== "pending") return null;
+  if (!hasJob(video)) {
+    await db
+      .update(videos)
+      .set({
+        transcriptStatus: "error",
+        transcriptError: "submit returned no job id; retry",
+      })
+      .where(eq(videos.id, video.id));
+    return null;
+  }
+  const qs = `owner_token=${encodeURIComponent(video.transcriptToken!)}`;
+  let res: Response;
+  try {
+    res = await fetch(`${baseUrl()}/api/jobs/${video.transcriptJobId}?${qs}`, {
+      signal: AbortSignal.timeout(8000),
+    });
+  } catch {
+    return null; // transcribe unreachable; try again next poll
+  }
   if (res.status === 404) {
     await db
       .update(videos)
       .set({ transcriptStatus: "error", transcriptError: "job not found" })
       .where(eq(videos.id, video.id));
-    return;
+    return null;
   }
-  if (!res.ok) return; // transient; try again next poll
-  const status = (await res.json()) as JobStatus;
+  if (!res.ok) return null; // transient; try again next poll
+  const status = (await res.json()) as JobStatus & {
+    queue_position?: number | null;
+  };
+  const live: JobLive = {
+    stage: status.stage,
+    progress: status.progress,
+    queuePosition: status.queue_position ?? null,
+  };
 
   if (status.stage === "error") {
     await db
@@ -110,14 +151,14 @@ export async function refreshTranscription(video: Video) {
         transcriptError: status.error_message ?? "transcription failed",
       })
       .where(eq(videos.id, video.id));
-    return;
+    return live;
   }
-  if (status.stage !== "done") return;
+  if (status.stage !== "done") return live;
 
   const trRes = await fetch(
     `${baseUrl()}/api/jobs/${video.transcriptJobId}/transcript.json?${qs}`,
   );
-  if (!trRes.ok) return;
+  if (!trRes.ok) return live;
   const transcript = (await trRes.json()) as Transcript;
 
   await db
@@ -138,4 +179,29 @@ export async function refreshTranscription(video: Video) {
     .update(videos)
     .set({ transcriptStatus: "done", transcriptError: null })
     .where(eq(videos.id, video.id));
+  return live;
+}
+
+/** Sync every pending video against transcribe and return the live status
+ * per video id, so admin pages can show what is actually running. */
+export async function syncPending(rows: Video[]) {
+  const live = new Map<string, JobLive | null>();
+  await Promise.all(
+    rows
+      .filter((v) => v.transcriptStatus === "pending")
+      .map(async (v) => live.set(v.id, await refreshTranscription(v))),
+  );
+  return live;
+}
+
+export function describeJob(status: string, live: JobLive | null | undefined) {
+  if (status !== "pending") return status;
+  if (live === undefined) return "pending";
+  if (live === null) return "pending · transcribe unreachable";
+  if (live.stage === "queued")
+    return live.queuePosition !== null
+      ? `queued · #${live.queuePosition}`
+      : "queued";
+  if (live.stage === "done") return "done · importing";
+  return `${live.stage} · ${Math.round(live.progress * 100)}%`;
 }
