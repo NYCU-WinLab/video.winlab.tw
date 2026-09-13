@@ -2,6 +2,7 @@
 
 import { ChevronDown, CircleUser, LogOut, Shield } from "lucide-react";
 import Link from "next/link";
+import { ThemeMenuItems } from "@/components/theme-menu-items";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -39,6 +40,8 @@ export function UserMenu({ name, isAdmin, signOutAction }: Props) {
             <DropdownMenuSeparator />
           </>
         )}
+        <ThemeMenuItems />
+        <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => signOutAction()}>
           <LogOut className="size-4" />
           Sign out
