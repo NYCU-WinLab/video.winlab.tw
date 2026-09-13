@@ -1,44 +1,49 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { Search } from "lucide-react";
+import { createContext, useContext, useState } from "react";
 import { Input } from "@/components/ui/input";
 
-export type SortKey = "name" | "date";
+const QueryContext = createContext<{
+  query: string;
+  setQuery: (q: string) => void;
+}>({ query: "", setQuery: () => {} });
 
-export function readSort(params: URLSearchParams): SortKey {
-  return params.get("sort") === "date" ? "date" : "name";
-}
-
-function setParam(key: string, value: string | null) {
-  const url = new URL(window.location.href);
-  if (value) url.searchParams.set(key, value);
-  else url.searchParams.delete(key);
-  window.history.replaceState(window.history.state, "", url);
-}
-
-/** Search box + sort toggle for the home grid; state lives in the URL. */
-export function LibraryToolbar() {
-  const params = useSearchParams();
-  const query = params.get("q") ?? "";
-  const sort = readSort(params);
-
+/** Shares the search query between the header toolbar and the grid. */
+export function LibraryProvider({ children }: { children: React.ReactNode }) {
+  const [query, setQuery] = useState("");
   return (
-    <>
+    <QueryContext.Provider value={{ query, setQuery }}>
+      {children}
+    </QueryContext.Provider>
+  );
+}
+
+export function useLibraryQuery() {
+  return useContext(QueryContext);
+}
+
+export function LibraryToolbar() {
+  const { query, setQuery } = useLibraryQuery();
+  return (
+    <form
+      className="relative w-full max-w-md"
+      onSubmit={(e) => e.preventDefault()}
+    >
       <Input
+        type="search"
         value={query}
-        onChange={(e) => setParam("q", e.target.value || null)}
-        placeholder="Search…"
-        className="h-8 w-full max-w-md"
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search"
+        className="h-9 rounded-full pr-10"
       />
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-8 text-xs text-muted-foreground"
-        onClick={() => setParam("sort", sort === "name" ? "date" : null)}
+      <button
+        type="submit"
+        aria-label="Search"
+        className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-full text-muted-foreground hover:text-foreground"
       >
-        {sort === "name" ? "Name" : "Newest"}
-      </Button>
-    </>
+        <Search className="size-4" />
+      </button>
+    </form>
   );
 }

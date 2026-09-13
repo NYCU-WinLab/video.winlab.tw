@@ -1,7 +1,6 @@
-import { Suspense } from "react";
 import { and, eq } from "drizzle-orm";
 import { auth } from "@/auth";
-import { LibraryToolbar } from "@/components/library-toolbar";
+import { LibraryProvider, LibraryToolbar } from "@/components/library-toolbar";
 import { SiteHeader } from "@/components/site-header";
 import { VideoLibrary, type LibraryItem } from "@/components/video-library";
 import { db } from "@/lib/db";
@@ -33,17 +32,13 @@ export default async function HomePage() {
   }));
 
   return (
-    <>
+    <LibraryProvider>
       <SiteHeader>
-        <Suspense>
-          <LibraryToolbar />
-        </Suspense>
+        <LibraryToolbar />
       </SiteHeader>
       <main className="w-full flex-1 p-6">
-        <Suspense>
-          <VideoLibrary items={items} />
-        </Suspense>
+        <VideoLibrary items={items} />
       </main>
-    </>
+    </LibraryProvider>
   );
 }

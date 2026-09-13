@@ -37,8 +37,7 @@ export default async function AdminPage() {
     <>
       <SiteHeader crumb="Admin" />
       <main className="w-full flex-1 space-y-6 p-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-lg">Videos</h1>
+        <div className="flex justify-end">
           <UploadDialog />
         </div>
         <Table>
