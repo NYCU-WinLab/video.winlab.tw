@@ -32,21 +32,48 @@ function recentlyFailed(id: string) {
   }
 }
 
-/** Write the WebDAV Authorization header to a private temp file so the
- * credential never appears in the ffmpeg argv (`ps` would show it). ffmpeg
- * 7+ reads any option value from a file with the `-/option file` form. */
-async function withHeaderFile<T>(fn: (file: string) => Promise<T>) {
-  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "video-hdr-"));
-  const file = path.join(dir, "headers");
-  await fs.promises.writeFile(file, `Authorization: ${davAuthHeader()}\r\n`, {
-    mode: 0o600,
-  });
+/** Escape one ffconcat argument: spaces, quotes and backslashes are special. */
+function ffconcatEscape(value: string) {
+  return value.replace(/[\\ '"]/g, (c) => `\\${c}`);
+}
+
+/**
+ * Keep the WebDAV credential out of argv (`ps` would show it). Two different
+ * mechanisms because the ffmpeg CLI does not accept `-/headers`:
+ * - ffmpeg: a 0600 ffconcat list whose `option headers` line carries the
+ *   Authorization header, read with `-f concat -safe 0`.
+ * - ffprobe: `-/headers file` loads the option value from a 0600 file.
+ * Both temp files live in a private mkdtemp directory removed afterwards.
+ */
+async function withCredentialFiles<T>(
+  filename: string,
+  fn: (files: { concatList: string; headerFile: string }) => Promise<T>,
+) {
+  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "video-cred-"));
+  const header = `Authorization: ${davAuthHeader()}`;
+  const concatList = path.join(dir, "input.ffconcat");
+  const headerFile = path.join(dir, "headers");
+  await fs.promises.writeFile(
+    concatList,
+    `ffconcat version 1.0\nfile ${ffconcatEscape(davUrl(filename))}\noption headers ${ffconcatEscape(header)}\n`,
+    { mode: 0o600 },
+  );
+  await fs.promises.writeFile(headerFile, `${header}\r\n`, { mode: 0o600 });
   try {
-    return await fn(file);
+    return await fn({ concatList, headerFile });
   } finally {
     await fs.promises.rm(dir, { recursive: true, force: true });
   }
 }
+
+const CONCAT_INPUT_ARGS = [
+  "-safe",
+  "0",
+  "-protocol_whitelist",
+  "file,http,https,tcp,tls",
+  "-f",
+  "concat",
+];
 
 /**
  * Return the on-disk path of the thumbnail for a video, generating it with
@@ -83,19 +110,18 @@ async function generate(
   // Grab a frame a little way in so we skip black intro frames.
   const seek = duration && duration > 20 ? Math.min(duration * 0.1, 60) : 3;
   try {
-    await withHeaderFile((hdr) =>
+    await withCredentialFiles(filename, ({ concatList }) =>
       run(
         "ffmpeg",
         [
           "-hide_banner",
           "-loglevel",
           "error",
-          "-/headers",
-          hdr,
+          ...CONCAT_INPUT_ARGS,
           "-ss",
           seek.toFixed(1),
           "-i",
-          davUrl(filename),
+          concatList,
           "-frames:v",
           "1",
           "-vf",
@@ -124,14 +150,14 @@ async function generate(
 /** Duration in seconds via ffprobe over WebDAV, or null when it fails. */
 export async function probeDuration(filename: string): Promise<number | null> {
   try {
-    const { stdout } = await withHeaderFile((hdr) =>
+    const { stdout } = await withCredentialFiles(filename, ({ headerFile }) =>
       run(
         "ffprobe",
         [
           "-v",
           "error",
           "-/headers",
-          hdr,
+          headerFile,
           "-show_entries",
           "format=duration",
           "-of",
