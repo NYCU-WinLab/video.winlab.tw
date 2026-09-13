@@ -1,7 +1,7 @@
 const baseUrl = () => process.env.NEXTCLOUD_URL!.replace(/\/$/, "");
 const user = () => process.env.NEXTCLOUD_USER!;
 
-function authHeader() {
+export function davAuthHeader() {
   return (
     "Basic " +
     Buffer.from(`${user()}:${process.env.NEXTCLOUD_APP_PASSWORD}`).toString(
@@ -17,7 +17,7 @@ export function davUrl(filename: string) {
 export async function davPut(filename: string, body: ReadableStream) {
   const res = await fetch(davUrl(filename), {
     method: "PUT",
-    headers: { Authorization: authHeader() },
+    headers: { Authorization: davAuthHeader() },
     body,
     // @ts-expect-error duplex is required by undici for streaming bodies
     duplex: "half",
@@ -30,7 +30,7 @@ export async function davPut(filename: string, body: ReadableStream) {
 export async function davGet(filename: string, range?: string | null) {
   return fetch(davUrl(filename), {
     headers: {
-      Authorization: authHeader(),
+      Authorization: davAuthHeader(),
       ...(range ? { Range: range } : {}),
     },
   });
@@ -39,7 +39,7 @@ export async function davGet(filename: string, range?: string | null) {
 export async function davDelete(filename: string) {
   const res = await fetch(davUrl(filename), {
     method: "DELETE",
-    headers: { Authorization: authHeader() },
+    headers: { Authorization: davAuthHeader() },
   });
   if (!res.ok && res.status !== 404) {
     throw new Error(`WebDAV DELETE failed: ${res.status}`);

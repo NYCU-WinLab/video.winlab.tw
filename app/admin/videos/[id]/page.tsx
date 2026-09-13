@@ -54,7 +54,7 @@ export default async function AdminVideoPage({
         </div>
 
         <section>
-          <h2 className="mb-3 text-lg font-semibold">Viewers</h2>
+          <h2 className="mb-3 text-lg">Viewers</h2>
           <Table>
             <TableHeader>
               <TableRow>

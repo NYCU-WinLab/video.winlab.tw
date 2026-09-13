@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { davPut } from "@/lib/nextcloud";
 import { videos } from "@/lib/schema";
+import { ensureThumbnail } from "@/lib/thumbnail";
 import { submitTranscription } from "@/lib/transcribe";
 
 export const runtime = "nodejs";
@@ -48,5 +49,6 @@ export async function POST(req: Request) {
   };
   await db.insert(videos).values(row);
   after(() => submitTranscription(row));
+  after(() => ensureThumbnail(row.id, row.filename, null));
   return Response.json(row, { status: 201 });
 }
