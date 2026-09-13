@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { readSort } from "@/components/library-toolbar";
+import { useLibraryQuery } from "@/components/library-toolbar";
 import { formatDuration } from "@/lib/format";
 
 export type LibraryItem = {
@@ -23,7 +22,7 @@ function VideoCard({ item }: { item: LibraryItem }) {
 
   return (
     <Link href={`/watch/${item.id}`} className="group block">
-      <div className="relative aspect-video overflow-hidden rounded-xl bg-muted">
+      <div className="relative aspect-video overflow-hidden rounded-2xl bg-muted">
         {!thumbFailed && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -63,16 +62,12 @@ function VideoCard({ item }: { item: LibraryItem }) {
 }
 
 export function VideoLibrary({ items }: { items: LibraryItem[] }) {
-  const params = useSearchParams();
-  const query = (params.get("q") ?? "").trim().toLowerCase();
-  const sort = readSort(params);
+  const query = useLibraryQuery().query.trim().toLowerCase();
 
   const filtered = items
     .filter((i) => i.title.toLowerCase().includes(query))
     .sort((a, b) =>
-      sort === "name"
-        ? a.title.localeCompare(b.title, undefined, { numeric: true })
-        : b.createdAt - a.createdAt,
+      a.title.localeCompare(b.title, undefined, { numeric: true }),
     );
 
   if (filtered.length === 0) {
