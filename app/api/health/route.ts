@@ -18,7 +18,9 @@ export async function GET() {
   return Response.json({
     ok: true,
     db: "ok",
-    transcriptSyncAt: lastSyncAt ? new Date(lastSyncAt).toISOString() : null,
+    transcriptSyncAt: lastSyncAt()
+      ? new Date(lastSyncAt()!).toISOString()
+      : null,
     uptime: Math.round(process.uptime()),
   });
 }
