@@ -1,10 +1,9 @@
-import { count, desc, eq } from "drizzle-orm";
+import { asc, count, eq, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { LinkRow } from "@/components/link-row";
 import { SiteHeader } from "@/components/site-header";
 import { UploadDialog } from "@/components/upload-dialog";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -14,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { db } from "@/lib/db";
-import { formatBytes, formatDate, formatDuration } from "@/lib/format";
+import { formatBytes, formatDate } from "@/lib/format";
 import { videos, watchProgress } from "@/lib/schema";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +30,7 @@ export default async function AdminPage() {
     .from(videos)
     .leftJoin(watchProgress, eq(watchProgress.videoId, videos.id))
     .groupBy(videos.id)
-    .orderBy(desc(videos.createdAt));
+    .orderBy(asc(sql`lower(${videos.title})`));
 
   return (
     <>
@@ -44,10 +43,8 @@ export default async function AdminPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Title</TableHead>
-              <TableHead>Size</TableHead>
-              <TableHead>Duration</TableHead>
-              <TableHead>Transcript</TableHead>
               <TableHead>Viewers</TableHead>
+              <TableHead>Size</TableHead>
               <TableHead>Uploaded</TableHead>
             </TableRow>
           </TableHeader>
@@ -55,28 +52,14 @@ export default async function AdminPage() {
             {videoRows.map(({ video, viewers }) => (
               <LinkRow key={video.id} href={`/admin/videos/${video.id}`}>
                 <TableCell>{video.title}</TableCell>
-                <TableCell>{formatBytes(video.size)}</TableCell>
-                <TableCell>
-                  {video.duration ? formatDuration(video.duration) : "—"}
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      video.transcriptStatus === "error"
-                        ? "destructive"
-                        : "secondary"
-                    }
-                  >
-                    {video.transcriptStatus}
-                  </Badge>
-                </TableCell>
                 <TableCell>{viewers}</TableCell>
+                <TableCell>{formatBytes(video.size)}</TableCell>
                 <TableCell>{formatDate(video.createdAt)}</TableCell>
               </LinkRow>
             ))}
             {videoRows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-muted-foreground">
+                <TableCell colSpan={4} className="text-muted-foreground">
                   No videos yet.
                 </TableCell>
               </TableRow>
