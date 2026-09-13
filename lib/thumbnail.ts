@@ -76,3 +76,29 @@ async function generate(
     return null;
   }
 }
+
+/** Duration in seconds via ffprobe over WebDAV, or null when it fails. */
+export async function probeDuration(filename: string): Promise<number | null> {
+  try {
+    const { stdout } = await run(
+      "ffprobe",
+      [
+        "-v",
+        "error",
+        "-headers",
+        `Authorization: ${davAuthHeader()}\r\n`,
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "default=noprint_wrappers=1:nokey=1",
+        davUrl(filename),
+      ],
+      { timeout: 60_000 },
+    );
+    const seconds = Number.parseFloat(stdout.trim());
+    return Number.isFinite(seconds) && seconds > 0 ? seconds : null;
+  } catch (err) {
+    console.error(`ffprobe failed for ${filename}:`, err);
+    return null;
+  }
+}
