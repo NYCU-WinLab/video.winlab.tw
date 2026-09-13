@@ -1,20 +1,10 @@
 "use client";
 
-import { Pin } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
+import { readSort } from "@/components/library-toolbar";
+import { formatDuration } from "@/lib/format";
 
 export type LibraryItem = {
   id: string;
@@ -22,181 +12,82 @@ export type LibraryItem = {
   createdAt: number;
   duration: number | null;
   position: number | null;
-  lastWatchedAt: number | null;
-  pinned: boolean;
 };
 
-function formatDuration(seconds: number) {
-  const s = Math.floor(seconds);
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const sec = s % 60;
-  return h > 0
-    ? `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`
-    : `${m}:${String(sec).padStart(2, "0")}`;
-}
-
 function VideoCard({ item }: { item: LibraryItem }) {
-  const router = useRouter();
-  const [pinned, setPinned] = useState(item.pinned);
-
-  async function togglePin(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    const next = !pinned;
-    setPinned(next);
-    await fetch("/api/pins", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ videoId: item.id, pinned: next }),
-    }).catch(() => setPinned(!next));
-    router.refresh();
-  }
-
+  const [thumbFailed, setThumbFailed] = useState(false);
   const percent =
     item.position !== null && item.duration
       ? Math.min(100, (item.position / item.duration) * 100)
       : 0;
 
   return (
-    <Link href={`/watch/${item.id}`}>
-      <Card className="h-full transition-colors hover:bg-accent/50">
-        <CardHeader>
-          <div className="flex items-start justify-between gap-2">
-            <CardTitle className="line-clamp-2 text-base">
-              {item.title}
-            </CardTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="-mr-2 -mt-1 shrink-0"
-              onClick={togglePin}
-              aria-label={pinned ? "Unpin" : "Pin"}
-            >
-              <Pin
-                className={cn(
-                  "size-4",
-                  pinned ? "fill-current" : "text-muted-foreground",
-                )}
-              />
-            </Button>
+    <Link href={`/watch/${item.id}`} className="group block">
+      <div className="relative aspect-video overflow-hidden rounded-xl bg-muted">
+        {!thumbFailed && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={`/api/thumb/${item.id}`}
+            alt=""
+            loading="lazy"
+            onError={() => setThumbFailed(true)}
+            className="size-full object-cover"
+          />
+        )}
+        {item.duration !== null && (
+          <span className="absolute right-2 bottom-2 rounded bg-black/80 px-1.5 py-0.5 text-xs text-white">
+            {formatDuration(item.duration)}
+          </span>
+        )}
+        {percent > 0 && (
+          <div className="absolute inset-x-0 bottom-0 h-1 bg-white/30">
+            <div
+              className="h-full bg-red-600"
+              style={{ width: `${percent}%` }}
+            />
           </div>
-          <CardDescription>
-            {item.duration ? formatDuration(item.duration) : "—"} ·{" "}
-            {new Date(item.createdAt).toLocaleDateString("en-US", {
-              dateStyle: "medium",
-            })}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Progress value={percent} />
-          <p className="mt-2 text-xs text-muted-foreground">
-            {item.position !== null
-              ? `Resume at ${formatDuration(item.position)}`
-              : "Not started"}
-          </p>
-        </CardContent>
-      </Card>
+        )}
+      </div>
+      <div className="mt-3 space-y-1">
+        <p className="line-clamp-2 text-sm leading-snug">{item.title}</p>
+        <p className="text-xs text-muted-foreground">
+          {new Date(item.createdAt).toLocaleDateString("en-US", {
+            dateStyle: "medium",
+          })}
+          {item.position !== null &&
+            ` · Resume at ${formatDuration(item.position)}`}
+        </p>
+      </div>
     </Link>
   );
 }
 
-function Section({
-  title,
-  items,
-  emptyText,
-  sortable = false,
-}: {
-  title: string;
-  items: LibraryItem[];
-  emptyText: string;
-  sortable?: boolean;
-}) {
-  const [query, setQuery] = useState("");
-  const [sortBy, setSortBy] = useState<"name" | "date">("name");
+export function VideoLibrary({ items }: { items: LibraryItem[] }) {
+  const params = useSearchParams();
+  const query = (params.get("q") ?? "").trim().toLowerCase();
+  const sort = readSort(params);
 
-  let filtered = items.filter((i) =>
-    i.title.toLowerCase().includes(query.trim().toLowerCase()),
-  );
-  if (sortable) {
-    filtered = [...filtered].sort((a, b) =>
-      sortBy === "name"
+  const filtered = items
+    .filter((i) => i.title.toLowerCase().includes(query))
+    .sort((a, b) =>
+      sort === "name"
         ? a.title.localeCompare(b.title, undefined, { numeric: true })
         : b.createdAt - a.createdAt,
+    );
+
+  if (filtered.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        {items.length === 0 ? "No videos yet." : "No matches."}
+      </p>
     );
   }
 
   return (
-    <section>
-      <div className="mb-4 flex items-center justify-between gap-4">
-        <h2 className="text-lg font-semibold">{title}</h2>
-        <div className="flex items-center gap-2">
-          {sortable && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 text-xs"
-              onClick={() =>
-                setSortBy((s) => (s === "name" ? "date" : "name"))
-              }
-            >
-              Sort: {sortBy === "name" ? "Name" : "Newest"}
-            </Button>
-          )}
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search…"
-            className="h-8 max-w-48"
-          />
-        </div>
-      </div>
-      {filtered.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          {items.length === 0 ? emptyText : "No matches."}
-        </p>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((item) => (
-            <VideoCard key={item.id} item={item} />
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
-
-export function VideoLibrary({ items }: { items: LibraryItem[] }) {
-  // Recently watched first; pad the row up to 6 with the next unwatched
-  // videos in course (name) order.
-  const watched = items
-    .filter((i) => i.lastWatchedAt !== null)
-    .sort((a, b) => (b.lastWatchedAt ?? 0) - (a.lastWatchedAt ?? 0));
-  const unwatched = items
-    .filter((i) => i.lastWatchedAt === null)
-    .sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true }));
-  const recent = [...watched, ...unwatched].slice(0, 6);
-  const pinned = items.filter((i) => i.pinned);
-
-  return (
-    <div className="space-y-10">
-      <Section
-        title="Recently watched"
-        items={recent}
-        emptyText="Nothing watched yet."
-      />
-      <Section
-        title="Pinned"
-        items={pinned}
-        emptyText="No pinned videos."
-        sortable
-      />
-      <Section
-        title="All videos"
-        items={items}
-        emptyText="No videos yet."
-        sortable
-      />
+    <div className="grid gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {filtered.map((item) => (
+        <VideoCard key={item.id} item={item} />
+      ))}
     </div>
   );
 }

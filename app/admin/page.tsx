@@ -38,7 +38,7 @@ export default async function AdminPage() {
       <SiteHeader crumb="Admin" />
       <main className="w-full flex-1 space-y-6 p-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-lg font-semibold">Videos</h1>
+          <h1 className="text-lg">Videos</h1>
           <UploadDialog />
         </div>
         <Table>
@@ -55,7 +55,7 @@ export default async function AdminPage() {
           <TableBody>
             {videoRows.map(({ video, viewers }) => (
               <LinkRow key={video.id} href={`/admin/videos/${video.id}`}>
-                <TableCell className="font-medium">{video.title}</TableCell>
+                <TableCell>{video.title}</TableCell>
                 <TableCell>{formatBytes(video.size)}</TableCell>
                 <TableCell>
                   {video.duration ? formatDuration(video.duration) : "—"}
