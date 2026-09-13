@@ -15,6 +15,8 @@ import {
 import { db } from "@/lib/db";
 import { formatBytes, formatDate } from "@/lib/format";
 import { videos, watchProgress } from "@/lib/schema";
+import { describeJob, syncPending } from "@/lib/transcribe";
+import { Badge } from "@/components/ui/badge";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +34,12 @@ export default async function AdminPage() {
     .groupBy(videos.id)
     .orderBy(asc(sql`lower(${videos.title})`));
 
+  // Pull live status from transcribe for anything still pending; this also
+  // imports finished transcripts nobody has opened yet.
+  const live = await syncPending(videoRows.map((r) => r.video));
+  const fresh = await db.select().from(videos);
+  const statusOf = new Map(fresh.map((v) => [v.id, v.transcriptStatus]));
+
   return (
     <>
       <SiteHeader crumb="Admin" />
@@ -44,22 +52,33 @@ export default async function AdminPage() {
             <TableRow>
               <TableHead>Title</TableHead>
               <TableHead>Viewers</TableHead>
+              <TableHead>Transcript</TableHead>
               <TableHead>Size</TableHead>
               <TableHead>Uploaded</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {videoRows.map(({ video, viewers }) => (
-              <LinkRow key={video.id} href={`/admin/videos/${video.id}`}>
-                <TableCell>{video.title}</TableCell>
-                <TableCell>{viewers}</TableCell>
-                <TableCell>{formatBytes(video.size)}</TableCell>
-                <TableCell>{formatDate(video.createdAt)}</TableCell>
-              </LinkRow>
-            ))}
+            {videoRows.map(({ video, viewers }) => {
+              const status = statusOf.get(video.id) ?? video.transcriptStatus;
+              return (
+                <LinkRow key={video.id} href={`/admin/videos/${video.id}`}>
+                  <TableCell>{video.title}</TableCell>
+                  <TableCell>{viewers}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={status === "error" ? "destructive" : "secondary"}
+                    >
+                      {describeJob(status, live.get(video.id))}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{formatBytes(video.size)}</TableCell>
+                  <TableCell>{formatDate(video.createdAt)}</TableCell>
+                </LinkRow>
+              );
+            })}
             {videoRows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="text-muted-foreground">
+                <TableCell colSpan={5} className="text-muted-foreground">
                   No videos yet.
                 </TableCell>
               </TableRow>

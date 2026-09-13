@@ -1,3 +1,4 @@
+import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { desc, eq } from "drizzle-orm";
@@ -17,6 +18,12 @@ import {
 import { db } from "@/lib/db";
 import { formatBytes, formatDate, formatDuration } from "@/lib/format";
 import { videos, watchProgress } from "@/lib/schema";
+import {
+  describeJob,
+  refreshTranscription,
+  transcribeJobUrl,
+} from "@/lib/transcribe";
+import { TranscriptActions } from "@/components/transcript-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -29,8 +36,11 @@ export default async function AdminVideoPage({
   if (!session?.user.isAdmin) redirect("/");
 
   const { id } = await params;
-  const [video] = await db.select().from(videos).where(eq(videos.id, id));
+  let [video] = await db.select().from(videos).where(eq(videos.id, id));
   if (!video) notFound();
+  const live = await refreshTranscription(video);
+  [video] = await db.select().from(videos).where(eq(videos.id, id));
+  const jobUrl = transcribeJobUrl(video);
 
   const viewers = await db
     .select()
@@ -43,7 +53,13 @@ export default async function AdminVideoPage({
       <SiteHeader crumb={`Admin / ${video.title}`} />
       <main className="w-full flex-1 space-y-6 p-6">
         <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-          <Badge variant="secondary">{video.transcriptStatus}</Badge>
+          <Badge
+            variant={
+              video.transcriptStatus === "error" ? "destructive" : "secondary"
+            }
+          >
+            {describeJob(video.transcriptStatus, live)}
+          </Badge>
           <span>{formatBytes(video.size)}</span>
           <span>
             {video.duration ? formatDuration(video.duration) : "unknown length"}
@@ -56,6 +72,25 @@ export default async function AdminVideoPage({
             <VideoAdminActions id={video.id} title={video.title} />
           </div>
         </div>
+
+        <section className="flex flex-wrap items-center gap-3 text-sm">
+          <span className="text-muted-foreground">Transcript</span>
+          <span>{describeJob(video.transcriptStatus, live)}</span>
+          {video.transcriptError && (
+            <span className="text-destructive">{video.transcriptError}</span>
+          )}
+          <div className="ml-auto flex items-center gap-2">
+            {jobUrl && (
+              <Button asChild variant="outline" size="sm">
+                <a href={jobUrl} target="_blank" rel="noreferrer">
+                  <ExternalLink />
+                  Open in Transcribe
+                </a>
+              </Button>
+            )}
+            <TranscriptActions id={video.id} status={video.transcriptStatus} />
+          </div>
+        </section>
 
         <section>
           <h2 className="mb-3 text-lg">Viewers</h2>
