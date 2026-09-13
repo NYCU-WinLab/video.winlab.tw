@@ -19,9 +19,14 @@ export async function GET(
   if (!video) return Response.json({ error: "not found" }, { status: 404 });
 
   const file = await ensureThumbnail(video.id, video.filename, video.duration);
-  if (!file) return new Response(null, { status: 404 });
+  if (!file) {
+    return new Response(null, {
+      status: 404,
+      headers: { "cache-control": "private, max-age=3600" },
+    });
+  }
 
-  const body = new Uint8Array(fs.readFileSync(file));
+  const body = new Uint8Array(await fs.promises.readFile(file));
   return new Response(body, {
     headers: {
       "content-type": "image/jpeg",

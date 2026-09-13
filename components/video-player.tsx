@@ -43,7 +43,6 @@ export function VideoPlayer({
         videoId,
         position: video.currentTime,
         delta,
-        duration: Number.isFinite(video.duration) ? video.duration : undefined,
       });
       if (useBeacon && navigator.sendBeacon) {
         navigator.sendBeacon(

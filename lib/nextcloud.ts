@@ -45,3 +45,21 @@ export async function davDelete(filename: string) {
     throw new Error(`WebDAV DELETE failed: ${res.status}`);
   }
 }
+
+/** Cheap reachability check against the videos collection. */
+export async function davPing(timeoutMs = 5000) {
+  try {
+    const res = await fetch(
+      `${baseUrl()}/remote.php/dav/files/${user()}/videos/`,
+      {
+        method: "PROPFIND",
+        headers: { Authorization: davAuthHeader(), Depth: "0" },
+        signal: AbortSignal.timeout(timeoutMs),
+      },
+    );
+    await res.body?.cancel();
+    return res.ok || res.status === 207;
+  } catch {
+    return false;
+  }
+}

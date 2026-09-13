@@ -22,7 +22,12 @@ export async function POST(
 
   await db
     .update(videos)
-    .set({ transcriptStatus: "pending", transcriptError: null })
+    .set({
+      transcriptStatus: "pending",
+      transcriptError: null,
+      transcriptJobId: null,
+      transcriptToken: null,
+    })
     .where(eq(videos.id, id));
   after(() => submitTranscription({ ...video }));
 

@@ -1,4 +1,5 @@
 import { Readable } from "node:stream";
+import { lastSyncAt } from "./sync-state";
 import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { davGet } from "./nextcloud";
@@ -56,7 +57,8 @@ export async function submitTranscription(video: Video) {
       duplex: "half",
     });
     if (!res.ok) {
-      throw new Error(`transcribe submit failed: ${res.status} ${await res.text()}`);
+      const text = await res.text();
+      throw new Error(`transcribe submit failed: ${res.status} ${text}`);
     }
     const job = (await res.json()) as JobCreate;
     await db
@@ -101,12 +103,27 @@ export function transcribeJobUrl(video: Video) {
   return hasJob(video) ? `${baseUrl()}/jobs/${video.transcriptJobId}` : null;
 }
 
+const importing = new Map<string, Promise<JobLive | null>>();
+
 /** Poll the transcribe job for a pending video; on done, ingest segments.
- * Returns the live upstream status when it was reachable. */
-export async function refreshTranscription(
-  video: Video,
-): Promise<JobLive | null> {
-  if (video.transcriptStatus !== "pending") return null;
+ * Returns the live upstream status when it was reachable. Concurrent calls
+ * for the same video (admin page, watch-page poll, background tick) share
+ * one in-flight refresh so the import never runs twice at once. */
+export function refreshTranscription(video: Video): Promise<JobLive | null> {
+  if (video.transcriptStatus !== "pending") return Promise.resolve(null);
+  const pending = importing.get(video.id);
+  if (pending) return pending;
+  const job = refreshOnce(video)
+    .catch((err) => {
+      console.error(`transcript refresh failed for ${video.id}:`, err);
+      return null;
+    })
+    .finally(() => importing.delete(video.id));
+  importing.set(video.id, job);
+  return job;
+}
+
+async function refreshOnce(video: Video): Promise<JobLive | null> {
   if (!hasJob(video)) {
     await db
       .update(videos)
@@ -127,13 +144,17 @@ export async function refreshTranscription(
     return null; // transcribe unreachable; try again next poll
   }
   if (res.status === 404) {
+    await res.body?.cancel();
     await db
       .update(videos)
       .set({ transcriptStatus: "error", transcriptError: "job not found" })
       .where(eq(videos.id, video.id));
     return null;
   }
-  if (!res.ok) return null; // transient; try again next poll
+  if (!res.ok) {
+    await res.body?.cancel();
+    return null; // transient; try again next poll
+  }
   const status = (await res.json()) as JobStatus & {
     queue_position?: number | null;
   };
@@ -155,15 +176,21 @@ export async function refreshTranscription(
   }
   if (status.stage !== "done") return live;
 
-  const trRes = await fetch(
-    `${baseUrl()}/api/jobs/${video.transcriptJobId}/transcript.json?${qs}`,
-  );
-  if (!trRes.ok) return live;
+  let trRes: Response;
+  try {
+    trRes = await fetch(
+      `${baseUrl()}/api/jobs/${video.transcriptJobId}/transcript.json?${qs}`,
+      { signal: AbortSignal.timeout(30_000) },
+    );
+  } catch {
+    return live;
+  }
+  if (!trRes.ok) {
+    await trRes.body?.cancel();
+    return live;
+  }
   const transcript = (await trRes.json()) as Transcript;
 
-  await db
-    .delete(transcriptSegments)
-    .where(eq(transcriptSegments.videoId, video.id));
   const rows = transcript.segments.map((s, idx) => ({
     videoId: video.id,
     idx,
@@ -172,26 +199,42 @@ export async function refreshTranscription(
     text: s.text,
     speaker: s.speaker ?? null,
   }));
-  for (let i = 0; i < rows.length; i += 500) {
-    await db.insert(transcriptSegments).values(rows.slice(i, i + 500));
-  }
-  await db
-    .update(videos)
-    .set({ transcriptStatus: "done", transcriptError: null })
-    .where(eq(videos.id, video.id));
+  // better-sqlite3 transactions are synchronous: everything inside runs
+  // atomically, so a crash mid-import can never leave a half-written set.
+  db.transaction((tx) => {
+    tx.delete(transcriptSegments)
+      .where(eq(transcriptSegments.videoId, video.id))
+      .run();
+    for (let i = 0; i < rows.length; i += 500) {
+      tx.insert(transcriptSegments).values(rows.slice(i, i + 500)).run();
+    }
+    tx.update(videos)
+      .set({ transcriptStatus: "done", transcriptError: null })
+      .where(eq(videos.id, video.id))
+      .run();
+  });
   return live;
 }
 
 /** Sync every pending video against transcribe and return the live status
  * per video id, so admin pages can show what is actually running. */
-export async function syncPending(rows: Video[]) {
+export async function syncPending(rows: Video[], concurrency = 4) {
   const live = new Map<string, JobLive | null>();
-  await Promise.all(
-    rows
-      .filter((v) => v.transcriptStatus === "pending")
-      .map(async (v) => live.set(v.id, await refreshTranscription(v))),
-  );
+  const queue = rows.filter((v) => v.transcriptStatus === "pending");
+  const workers = Array.from({ length: concurrency }, async () => {
+    for (let v = queue.shift(); v; v = queue.shift()) {
+      live.set(v.id, await refreshTranscription(v));
+    }
+  });
+  await Promise.all(workers);
   return live;
+}
+
+/** True when the background poller ran recently enough that page loads can
+ * skip their own upstream round-trips. */
+export function recentlySynced(maxAgeMs = 60_000) {
+  const at = lastSyncAt();
+  return at !== null && Date.now() - at < maxAgeMs;
 }
 
 export function describeJob(status: string, live: JobLive | null | undefined) {
@@ -204,4 +247,18 @@ export function describeJob(status: string, live: JobLive | null | undefined) {
       : "queued";
   if (live.stage === "done") return "done · importing";
   return `${live.stage} · ${Math.round(live.progress * 100)}%`;
+}
+
+/** Reachability check for /api/health: any HTTP answer counts as up. */
+export async function transcribePing(timeoutMs = 5000) {
+  try {
+    const res = await fetch(`${baseUrl()}/api/jobs`, {
+      method: "OPTIONS",
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    await res.body?.cancel();
+    return res.status < 500;
+  } catch {
+    return false;
+  }
 }

@@ -27,6 +27,7 @@ export async function GET(
 
   const upstream = await davGet(video.filename, req.headers.get("range"));
   if (!upstream.ok && upstream.status !== 206) {
+    await upstream.body?.cancel();
     return Response.json({ error: "upstream error" }, { status: 502 });
   }
 
