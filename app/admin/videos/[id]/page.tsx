@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { desc, eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { SiteHeader } from "@/components/site-header";
+import { VideoAdminActions } from "@/components/video-admin-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,9 +49,12 @@ export default async function AdminVideoPage({
             {video.duration ? formatDuration(video.duration) : "unknown length"}
           </span>
           <span>uploaded {formatDate(video.createdAt)}</span>
-          <Button asChild variant="outline" size="sm" className="ml-auto">
-            <Link href={`/watch/${video.id}`}>Watch</Link>
-          </Button>
+          <div className="ml-auto flex items-center gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/watch/${video.id}`}>Watch</Link>
+            </Button>
+            <VideoAdminActions id={video.id} title={video.title} />
+          </div>
         </div>
 
         <section>
