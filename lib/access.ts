@@ -1,6 +1,6 @@
 import { eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { userTags, videoTags } from "@/lib/schema";
+import { userTags, users, videoTags } from "@/lib/schema";
 
 /** Bootstrap admins from the environment. Everyone else becomes an admin by
  * getting `role = 'admin'` in the users table. */
@@ -15,6 +15,44 @@ export function isBootstrapAdmin(email: string | null | undefined) {
 
 export function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
+}
+
+export async function findUser(email: string) {
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, normalizeEmail(email)));
+  return user ?? null;
+}
+
+/**
+ * The allow list row for an email, creating it for bootstrap admins. An address
+ * in ADMIN_EMAILS never needs an invitation, including one added long after the
+ * seed ran, and every sign-in path resolves it through here so Google and the
+ * email code agree on who exists.
+ */
+export async function allowListRow(email: string, name?: string | null) {
+  const address = normalizeEmail(email);
+  if (!address) return null;
+
+  const existing = await findUser(address);
+  if (existing) {
+    if (!existing.name && name) {
+      await db.update(users).set({ name }).where(eq(users.email, address));
+      return { ...existing, name };
+    }
+    return existing;
+  }
+  if (!isBootstrapAdmin(address)) return null;
+
+  const row = {
+    email: address,
+    name: name ?? null,
+    role: "admin",
+    createdAt: Date.now(),
+  };
+  await db.insert(users).values(row).onConflictDoNothing();
+  return (await findUser(address)) ?? row;
 }
 
 /** Tags the viewer carries. Kept out of the JWT on purpose: an admin change

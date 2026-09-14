@@ -1,35 +1,8 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
-import { eq } from "drizzle-orm";
-import { isBootstrapAdmin, normalizeEmail } from "@/lib/access";
-import { db } from "@/lib/db";
-import { findUser, verifyLoginCode } from "@/lib/login-codes";
-import { users } from "@/lib/schema";
-
-/** Bootstrap admins never need an invitation: they are inserted into the allow
- * list the first time they sign in, so ADMIN_EMAILS alone is enough to get in. */
-async function allowListRow(email: string, name?: string | null) {
-  const address = normalizeEmail(email);
-  if (!address) return null;
-  const existing = await findUser(address);
-  if (existing) {
-    if (!existing.name && name) {
-      await db.update(users).set({ name }).where(eq(users.email, address));
-      return { ...existing, name };
-    }
-    return existing;
-  }
-  if (!isBootstrapAdmin(address)) return null;
-  const row = {
-    email: address,
-    name: name ?? null,
-    role: "admin",
-    createdAt: Date.now(),
-  };
-  await db.insert(users).values(row).onConflictDoNothing();
-  return row;
-}
+import { allowListRow, isBootstrapAdmin } from "@/lib/access";
+import { verifyLoginCode } from "@/lib/login-codes";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [

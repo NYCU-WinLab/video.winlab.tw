@@ -61,6 +61,11 @@ export async function setUserRole(
 export async function deleteUser(email: string): Promise<ActionResult> {
   await requireAdmin();
   const address = normalizeEmail(email);
+  // ADMIN_EMAILS is the bootstrap source of admins: deleting such a row only
+  // takes effect until their next sign-in, so refuse instead of pretending.
+  if (isBootstrapAdmin(address)) {
+    return { error: "This admin comes from ADMIN_EMAILS and cannot be removed here" };
+  }
   await db.delete(userTags).where(eq(userTags.userEmail, address));
   await db.delete(loginCodes).where(eq(loginCodes.email, address));
   await db.delete(users).where(eq(users.email, address));

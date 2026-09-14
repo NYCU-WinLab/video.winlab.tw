@@ -1,6 +1,5 @@
-import { normalizeEmail } from "@/lib/access";
+import { allowListRow, normalizeEmail } from "@/lib/access";
 import {
-  findUser,
   issueLoginCode,
   MAX_REQUESTS_PER_HOUR,
   NOT_ALLOWED,
@@ -16,9 +15,10 @@ export async function POST(req: Request) {
     return Response.json({ error: "a valid email is required" }, { status: 400 });
   }
 
-  // Loki's call: tell people plainly that they are not on the list instead of
-  // pretending a code was sent.
-  if (!(await findUser(email))) {
+  // Same allow list as the Google path, so an ADMIN_EMAILS address that has no
+  // row yet gets one here instead of a 403. Loki's call to say plainly that an
+  // address is not on the list rather than pretend a code was sent.
+  if (!(await allowListRow(email))) {
     return Response.json({ error: NOT_ALLOWED }, { status: 403 });
   }
 

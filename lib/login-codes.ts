@@ -1,8 +1,8 @@
 import { createHash, randomInt, timingSafeEqual } from "node:crypto";
 import { and, desc, eq, gt, isNull, lt, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { normalizeEmail } from "@/lib/access";
-import { loginCodes, users } from "@/lib/schema";
+import { findUser, normalizeEmail } from "@/lib/access";
+import { loginCodes } from "@/lib/schema";
 
 export const CODE_TTL_MS = 10 * 60 * 1000;
 export const MAX_ATTEMPTS = 5;
@@ -17,12 +17,11 @@ function hash(code: string) {
   return createHash("sha256").update(code).digest("hex");
 }
 
-export async function findUser(email: string) {
-  const [user] = await db
-    .select()
-    .from(users)
-    .where(eq(users.email, normalizeEmail(email)));
-  return user ?? null;
+/** Constant-time comparison of two hex sha256 digests. */
+function sameHash(a: string, b: string) {
+  const left = Buffer.from(a, "hex");
+  const right = Buffer.from(b, "hex");
+  return left.length === right.length && timingSafeEqual(left, right);
 }
 
 /** Issues a code, or reports the rate limit. Callers must check the allow list
@@ -46,6 +45,13 @@ export async function issueLoginCode(
     );
   if (recent >= MAX_REQUESTS_PER_HOUR) return { ok: false, reason: "rate_limited" };
 
+  // Only the newest code is live. Retiring the older ones keeps a stale code
+  // from a previous email out of the verification path entirely.
+  await db
+    .update(loginCodes)
+    .set({ usedAt: now })
+    .where(and(eq(loginCodes.email, address), isNull(loginCodes.usedAt)));
+
   const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
   await db.insert(loginCodes).values({
     id: crypto.randomUUID(),
@@ -60,49 +66,64 @@ export async function issueLoginCode(
 }
 
 /**
- * Verifies the newest live code for an email. Every call burns an attempt, and
- * the fifth wrong guess invalidates the code so a stolen inbox preview cannot
- * be brute forced.
+ * Verifies the live code for an email. Guessing burns an attempt on the live
+ * code and the fifth wrong guess invalidates it, so a leaked inbox preview
+ * cannot be brute forced. A code that was already superseded, used or expired
+ * is rejected without touching the live code's budget: retyping the code from
+ * an older email must not lock the account out.
  */
 export async function verifyLoginCode(email: string, code: string) {
   const address = normalizeEmail(email);
   if (!/^\d{6}$/.test(code)) return null;
   const now = Date.now();
+  const digest = hash(code);
 
-  const [row] = await db
+  const rows = await db
     .select()
     .from(loginCodes)
+    .where(eq(loginCodes.email, address))
+    .orderBy(desc(loginCodes.createdAt));
+  const live = rows.find((r) => r.usedAt === null && r.expiresAt > now);
+
+  const matchesLive = live !== undefined && sameHash(digest, live.codeHash);
+  if (!matchesLive && rows.some((r) => sameHash(digest, r.codeHash))) return null;
+  if (!live) return null;
+
+  // One statement decides the attempt: the row only moves while it is unused
+  // and under the cap, so parallel guesses cannot push it past MAX_ATTEMPTS or
+  // race on a stale counter.
+  const [attempted] = await db
+    .update(loginCodes)
+    .set({ attempts: sql`${loginCodes.attempts} + 1` })
     .where(
       and(
-        eq(loginCodes.email, address),
+        eq(loginCodes.id, live.id),
         isNull(loginCodes.usedAt),
+        lt(loginCodes.attempts, MAX_ATTEMPTS),
         gt(loginCodes.expiresAt, now),
       ),
     )
-    .orderBy(desc(loginCodes.createdAt))
-    .limit(1);
-  if (!row) return null;
+    .returning();
+  if (!attempted) return null;
 
-  const attempts = row.attempts + 1;
-  await db
-    .update(loginCodes)
-    .set({ attempts })
-    .where(eq(loginCodes.id, row.id));
-
-  const given = Buffer.from(hash(code), "hex");
-  const stored = Buffer.from(row.codeHash, "hex");
-  const match = given.length === stored.length && timingSafeEqual(given, stored);
-  if (!match) {
-    if (attempts >= MAX_ATTEMPTS) {
+  if (!sameHash(digest, attempted.codeHash)) {
+    if (attempted.attempts >= MAX_ATTEMPTS) {
       await db
         .update(loginCodes)
         .set({ usedAt: now })
-        .where(eq(loginCodes.id, row.id));
+        .where(eq(loginCodes.id, attempted.id));
     }
     return null;
   }
 
-  await db.update(loginCodes).set({ usedAt: now }).where(eq(loginCodes.id, row.id));
+  // Burning the code is also a conditional update, so two requests carrying the
+  // same correct code cannot both succeed.
+  const [consumed] = await db
+    .update(loginCodes)
+    .set({ usedAt: now })
+    .where(and(eq(loginCodes.id, attempted.id), isNull(loginCodes.usedAt)))
+    .returning();
+  if (!consumed) return null;
 
   // The allow list is checked again here: the row may have been removed while
   // the code was in flight.

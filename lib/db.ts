@@ -101,8 +101,10 @@ function createDb(): BetterSQLite3Database<typeof schema> {
 }
 
 /** The allow list starts as everyone who already exists in the database plus
- * ADMIN_EMAILS, so turning the whitelist on does not lock the lab out. Runs
- * only while the table is still empty, so it never resurrects a deleted user. */
+ * ADMIN_EMAILS, so turning the whitelist on does not lock the lab out. It runs
+ * whenever the table is empty, not once: clearing the allow list completely
+ * brings this seed back on the next start. Removing individual users is safe,
+ * because a single remaining row keeps the seed from running again. */
 function seedUsers(sqlite: Database.Database) {
   const { total } = sqlite.prepare("SELECT count(*) AS total FROM users").get() as {
     total: number;

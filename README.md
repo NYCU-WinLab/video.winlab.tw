@@ -31,8 +31,9 @@ shown next to the player, clickable to seek.
   `ADMIN_EMAILS` is the bootstrap source and cannot be demoted from the UI.
 - The first migration seeds the allow list from everyone already known to the
   database (viewers in `watch_progress`, uploaders in `videos`) plus
-  `ADMIN_EMAILS`, so switching the allow list on locks nobody out. It only
-  runs while the table is empty.
+  `ADMIN_EMAILS`, so switching the allow list on locks nobody out. It runs on
+  any start that finds the table empty, so clearing the allow list entirely
+  brings it back; removing individual users does not.
 - Tags (`/admin/tags`) are assigned to users (`/admin/users`) and to videos
   (`/admin/videos/<id>`). A video with no tag is visible to everyone signed
   in; a video locked to tags is visible to admins and to users carrying one of

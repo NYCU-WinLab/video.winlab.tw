@@ -191,16 +191,18 @@ export function AdminUsers({
               </TableCell>
               <TableCell>{formatDate(user.createdAt)}</TableCell>
               <TableCell>
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  className="text-destructive"
-                  aria-label={`Remove ${user.email}`}
-                  disabled={pending}
-                  onClick={() => setToDelete(user)}
-                >
-                  <Trash2 />
-                </Button>
+                {!user.locked && (
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    className="text-destructive"
+                    aria-label={`Remove ${user.email}`}
+                    disabled={pending}
+                    onClick={() => setToDelete(user)}
+                  >
+                    <Trash2 />
+                  </Button>
+                )}
               </TableCell>
             </TableRow>
           ))}
