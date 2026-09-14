@@ -1,6 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { after } from "next/server";
 import { auth } from "@/auth";
+import { canView } from "@/lib/access";
 import { db } from "@/lib/db";
 import { videos, watchProgress } from "@/lib/schema";
 import { probeDuration } from "@/lib/thumbnail";
@@ -44,6 +45,9 @@ export async function POST(req: Request) {
   if (!video) return Response.json({ error: "not found" }, { status: 404 });
 
   const email = session.user.email;
+  if (!(await canView(email, session.user.isAdmin, videoId))) {
+    return Response.json({ error: "forbidden" }, { status: 403 });
+  }
   const now = Date.now();
   const [existing] = await db
     .select({ updatedAt: watchProgress.updatedAt })

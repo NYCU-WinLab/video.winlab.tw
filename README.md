@@ -2,7 +2,8 @@
 
 Lab video portal. Admins upload videos, lab members sign in with Google to
 watch them, and the site records where each viewer stopped and how long they
-actually watched. Videos are stored on the lab Nextcloud over WebDAV and
+actually watched. Only emails on the allow list can sign in, and videos can be
+locked to tags so that only the right people see them. Videos are stored on the lab Nextcloud over WebDAV and
 streamed through the app with HTTP Range support, so nothing is reachable
 without a signed-in session except `/api/health`. Uploads are transcribed by
 [transcribe.winlab.tw](https://transcribe.winlab.tw) and the transcript is
@@ -14,17 +15,39 @@ shown next to the player, clickable to seek.
 |-------|--------|
 | Framework | Next.js (App Router) + TypeScript |
 | UI | shadcn/ui + Tailwind CSS |
-| Auth | Auth.js (NextAuth v5) with Google OAuth, JWT sessions |
+| Auth | Auth.js (NextAuth v5): Google OAuth or emailed sign-in code, JWT sessions |
 | Database | SQLite via Drizzle ORM (better-sqlite3) |
 | Video storage | Nextcloud WebDAV (`video-svc` service account) |
 | Thumbnails, duration | ffmpeg / ffprobe on the host, cached under `THUMB_DIR` |
 | Transcripts | transcribe.winlab.tw HTTP API, polled in-process |
 
+## Access
+
+- The `users` table is the allow list. Both sign-in paths go through it: an
+  email that is not listed is rejected with "This email is not on the allow
+  list, ask an admin" on `/login`. Removing someone ends their session on
+  their next request.
+- Admins are `ADMIN_EMAILS` plus every user with `role = 'admin'`.
+  `ADMIN_EMAILS` is the bootstrap source and cannot be demoted from the UI.
+- The first migration seeds the allow list from everyone already known to the
+  database (viewers in `watch_progress`, uploaders in `videos`) plus
+  `ADMIN_EMAILS`, so switching the allow list on locks nobody out. It only
+  runs while the table is empty.
+- Tags (`/admin/tags`) are assigned to users (`/admin/users`) and to videos
+  (`/admin/videos/<id>`). A video with no tag is visible to everyone signed
+  in; a video locked to tags is visible to admins and to users carrying one of
+  those tags. The rule is enforced on the home list, the watch page and the
+  stream, thumbnail, transcript and progress APIs, not just in the UI.
+- Email sign-in: `/login` asks for an email, `POST /api/auth/pin/request`
+  mails a 6-digit code (sha256-hashed in `login_codes`, valid 10 minutes, 5
+  requests per email per hour, 5 guesses per code), and the `email-pin`
+  credentials provider checks it.
+
 ## How it works
 
-- `middleware.ts` requires a session on every page and API route except
-  `/login`, the auth callbacks and `/api/health`. `/admin` additionally
-  requires an email listed in `ADMIN_EMAILS`. Every API route re-checks the
+- `proxy.ts` (the Next.js 16 name for middleware) requires a session on every
+  page and API route except `/login`, the auth callbacks and `/api/health`.
+  `/admin` additionally requires an admin. Every API route re-checks the
   session itself.
 - Upload (`POST /api/videos`, admin only, 2 GB cap) streams the file to
   Nextcloud at `files/video-svc/videos/<id>-<name>`, records metadata in
@@ -38,8 +61,9 @@ shown next to the player, clickable to seek.
   asks transcribe for every `pending` video and imports finished segments in
   one SQLite transaction. The admin pages and the watch page's 15 s poll go
   through the same guarded path, so an import never runs twice at once.
-- Admin (`/admin`) lists videos with live transcript status, and each video
-  page offers rename, delete (removes the file, thumbnail, transcript and
+- Admin (`/admin`) lists videos with live transcript status and who they are
+  visible to, `/admin/users` manages the allow list, roles and user tags, and
+  `/admin/tags` manages tags. Each video page offers rename, tag locks, delete (removes the file, thumbnail, transcript and
   everyone's progress), resubmit, and a link to the transcribe job.
 - `GET /api/health` (public) reports `db`, `transcriptSync`, `thumbnails`,
   `nextcloud` and `transcribe` checks. It returns 503 only when the database
@@ -61,6 +85,11 @@ Production runs on PVE VM 114 as the `video` systemd service. Merging to
 ```sh
 ssh video 'cd /opt/video/app && git pull && ~/.bun/bin/bun install && ~/.bun/bin/bun run build && sudo systemctl restart video'
 ```
+
+Email sign-in needs `SMTP_USER` and `SMTP_PASS` (and optionally `SMTP_HOST`,
+`SMTP_PORT`, `MAIL_FROM`) in `/opt/video/app/.env` before the restart, and the
+deploy must run `bun install` because `nodemailer` is a new dependency.
+Without SMTP credentials the app refuses to hand out codes in production.
 
 ## Development
 

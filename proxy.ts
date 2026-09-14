@@ -1,5 +1,7 @@
 import { auth } from "@/auth";
 
+// Next.js 16 renamed the middleware convention to proxy.ts; the behaviour is
+// unchanged, but it now runs on the Node.js runtime.
 export default auth((req) => {
   const { pathname } = req.nextUrl;
   if (!req.auth) {

@@ -1,8 +1,11 @@
 import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { desc, eq } from "drizzle-orm";
+import { asc, desc, eq, sql } from "drizzle-orm";
 import { auth } from "@/auth";
+import { setVideoTags } from "@/app/admin/actions";
+import { AdminNav } from "@/components/admin-nav";
+import { TagPicker } from "@/components/tag-picker";
 import { SiteHeader } from "@/components/site-header";
 import { VideoAdminActions } from "@/components/video-admin-actions";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +20,7 @@ import {
 } from "@/components/ui/table";
 import { db } from "@/lib/db";
 import { formatBytes, formatDate, formatDuration } from "@/lib/format";
-import { videos, watchProgress } from "@/lib/schema";
+import { tags, videoTags, videos, watchProgress } from "@/lib/schema";
 import {
   describeJob,
   refreshTranscription,
@@ -42,6 +45,11 @@ export default async function AdminVideoPage({
   [video] = await db.select().from(videos).where(eq(videos.id, id));
   const jobUrl = transcribeJobUrl(video);
 
+  const [tagRows, lockRows] = await Promise.all([
+    db.select().from(tags).orderBy(asc(sql`lower(${tags.name})`)),
+    db.select().from(videoTags).where(eq(videoTags.videoId, id)),
+  ]);
+
   const viewers = await db
     .select()
     .from(watchProgress)
@@ -52,6 +60,7 @@ export default async function AdminVideoPage({
     <>
       <SiteHeader crumb={`Admin / ${video.title}`} />
       <main className="w-full flex-1 space-y-6 p-6">
+        <AdminNav current="/admin" />
         <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
           <Badge
             variant={
@@ -72,6 +81,20 @@ export default async function AdminVideoPage({
             <VideoAdminActions id={video.id} title={video.title} />
           </div>
         </div>
+
+        <section className="flex flex-wrap items-center gap-3 text-sm">
+          <span className="text-muted-foreground">Locked to tags</span>
+          <TagPicker
+            tags={tagRows}
+            selected={lockRows.map((l) => l.tagId)}
+            emptyLabel="Everyone"
+            label="Only these tags may watch"
+            onSave={setVideoTags.bind(null, video.id)}
+          />
+          <span className="text-muted-foreground">
+            No tag selected means every signed-in user can watch.
+          </span>
+        </section>
 
         <section className="flex flex-wrap items-center gap-3 text-sm">
           <span className="text-muted-foreground">Transcript</span>

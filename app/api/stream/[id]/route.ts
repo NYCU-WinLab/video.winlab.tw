@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { auth } from "@/auth";
+import { canView } from "@/lib/access";
 import { db } from "@/lib/db";
 import { davGet } from "@/lib/nextcloud";
 import { videos } from "@/lib/schema";
@@ -24,6 +25,9 @@ export async function GET(
   const { id } = await params;
   const [video] = await db.select().from(videos).where(eq(videos.id, id));
   if (!video) return Response.json({ error: "not found" }, { status: 404 });
+  if (!(await canView(session.user.email, session.user.isAdmin, id))) {
+    return Response.json({ error: "forbidden" }, { status: 403 });
+  }
 
   const upstream = await davGet(video.filename, req.headers.get("range"));
   if (!upstream.ok && upstream.status !== 206) {

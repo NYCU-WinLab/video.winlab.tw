@@ -48,5 +48,48 @@ export const watchProgress = sqliteTable(
   (t) => [primaryKey({ columns: [t.videoId, t.userEmail] })],
 );
 
+export const users = sqliteTable("users", {
+  email: text("email").primaryKey(),
+  name: text("name"),
+  role: text("role").notNull().default("member"),
+  createdAt: integer("created_at").notNull().default(0),
+});
+
+export const tags = sqliteTable("tags", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  createdAt: integer("created_at").notNull().default(0),
+});
+
+export const userTags = sqliteTable(
+  "user_tags",
+  {
+    userEmail: text("user_email").notNull(),
+    tagId: text("tag_id").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.userEmail, t.tagId] })],
+);
+
+export const videoTags = sqliteTable(
+  "video_tags",
+  {
+    videoId: text("video_id").notNull(),
+    tagId: text("tag_id").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.videoId, t.tagId] })],
+);
+
+export const loginCodes = sqliteTable("login_codes", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull(),
+  codeHash: text("code_hash").notNull(),
+  expiresAt: integer("expires_at").notNull(),
+  attempts: integer("attempts").notNull().default(0),
+  usedAt: integer("used_at"),
+  createdAt: integer("created_at").notNull(),
+});
+
 export type Video = typeof videos.$inferSelect;
 export type WatchProgress = typeof watchProgress.$inferSelect;
+export type User = typeof users.$inferSelect;
+export type Tag = typeof tags.$inferSelect;
