@@ -1,9 +1,11 @@
 "use client";
 
-import { Film } from "lucide-react";
+import { Film, SearchX } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useLibraryQuery } from "@/components/library-toolbar";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatDuration } from "@/lib/format";
 
 export type LibraryItem = {
@@ -78,8 +80,32 @@ function VideoCard({ item }: { item: LibraryItem }) {
   );
 }
 
+function VideoCardSkeleton() {
+  return (
+    <div className="block">
+      <Skeleton className="aspect-video rounded-2xl" />
+      <div className="mt-3 space-y-2">
+        <Skeleton className="h-4 w-4/5" />
+        <Skeleton className="h-3 w-1/3" />
+      </div>
+    </div>
+  );
+}
+
+/** Placeholder card grid shown while the library loads (see `app/loading.tsx`). */
+export function VideoLibrarySkeleton({ count = 8 }: { count?: number }) {
+  return (
+    <div className="grid gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {Array.from({ length: count }, (_, i) => (
+        <VideoCardSkeleton key={i} />
+      ))}
+    </div>
+  );
+}
+
 export function VideoLibrary({ items }: { items: LibraryItem[] }) {
-  const query = useLibraryQuery().query.trim().toLowerCase();
+  const rawQuery = useLibraryQuery().query.trim();
+  const query = rawQuery.toLowerCase();
 
   const filtered = items
     .filter((i) => i.title.toLowerCase().includes(query))
@@ -88,10 +114,22 @@ export function VideoLibrary({ items }: { items: LibraryItem[] }) {
     );
 
   if (filtered.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        {items.length === 0 ? "No videos yet." : "No matches."}
-      </p>
+    return items.length === 0 ? (
+      <EmptyState
+        icon={Film}
+        title="No videos yet"
+        description="Uploaded videos will show up here."
+      />
+    ) : (
+      <EmptyState
+        icon={SearchX}
+        title="No matches"
+        description={
+          rawQuery
+            ? `Nothing matches “${rawQuery}”.`
+            : "Try a different search."
+        }
+      />
     );
   }
 

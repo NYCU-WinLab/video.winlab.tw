@@ -1,8 +1,8 @@
 "use client";
 
-import { Upload } from "lucide-react";
+import { FileVideo, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,12 +16,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from "@/lib/limits";
+import { cn } from "@/lib/utils";
 
 export function UploadDialog() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [percent, setPercent] = useState(0);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   function upload(form: FormData) {
     return new Promise<void>((resolve, reject) => {
@@ -77,6 +81,7 @@ export function UploadDialog() {
       open={open}
       onOpenChange={(next) => {
         if (uploading) return; // don't close mid-upload
+        if (!next) setFileName(null); // reset picker when the dialog closes
         setOpen(next);
       }}
     >
@@ -99,14 +104,54 @@ export function UploadDialog() {
             <Label htmlFor="file">
               File (mp4, H.264 recommended, up to {MAX_UPLOAD_LABEL})
             </Label>
-            <Input
+            <input
+              ref={fileInputRef}
               id="file"
               name="file"
               type="file"
               accept="video/*"
               required
               disabled={uploading}
+              className="sr-only"
+              onChange={(e) =>
+                setFileName(e.currentTarget.files?.[0]?.name ?? null)
+              }
             />
+            <button
+              type="button"
+              disabled={uploading}
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={(e) => {
+                if (uploading) return;
+                e.preventDefault();
+                setDragging(true);
+              }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragging(false);
+                if (uploading) return;
+                const input = fileInputRef.current;
+                const dropped = e.dataTransfer.files;
+                if (input && dropped.length > 0) {
+                  input.files = dropped;
+                  setFileName(dropped[0].name);
+                }
+              }}
+              className={cn(
+                "flex w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-input px-4 py-6 text-center transition-colors outline-none hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50",
+                dragging && "border-ring bg-muted",
+              )}
+            >
+              <FileVideo className="size-6 text-muted-foreground" strokeWidth={1.5} />
+              {fileName ? (
+                <span className="type-body break-all">{fileName}</span>
+              ) : (
+                <span className="type-caption">
+                  Drag a video here, or click to choose
+                </span>
+              )}
+            </button>
           </div>
           {uploading && (
             <div className="space-y-1">

@@ -4,7 +4,25 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { VideoPlayer } from "@/components/video-player";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+
+// Placeholder rows mimicking the transcript list while the job is still
+// running. Widths vary so the shimmer reads as text, not a solid block.
+const SKELETON_WIDTHS = ["85%", "70%", "92%", "60%", "78%", "88%", "66%"];
+
+function TranscriptSkeleton() {
+  return (
+    <div className="flex-1 space-y-3 overflow-hidden p-2">
+      {SKELETON_WIDTHS.map((w, i) => (
+        <div key={i} className="flex gap-3 px-2 py-1.5">
+          <Skeleton className="h-4 w-10 shrink-0" />
+          <Skeleton className="h-4" style={{ width: w }} />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export type Segment = {
   start: number;
@@ -121,7 +139,14 @@ export function WatchView({
           <h2 className="text-sm">Transcript</h2>
         </div>
 
-        {status === "done" && segments.length > 0 ? (
+        {status === "pending" ? (
+          <div className="flex flex-1 flex-col overflow-hidden">
+            <TranscriptSkeleton />
+            <p className="shrink-0 px-4 py-3 text-center type-caption">
+              Transcribing… this can take a while.
+            </p>
+          </div>
+        ) : status === "done" && segments.length > 0 ? (
           <div ref={listRef} className="flex-1 overflow-y-auto p-2">
             {segments.map((seg, i) => (
               <button
@@ -150,7 +175,6 @@ export function WatchView({
           </div>
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center text-sm text-muted-foreground">
-            {status === "pending" && <p>Transcribing… this can take a while.</p>}
             {status === "done" && segments.length === 0 && (
               <p>No speech detected.</p>
             )}
