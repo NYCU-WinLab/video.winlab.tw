@@ -28,7 +28,7 @@ export default async function LoginPage({
   const message = error ? (MESSAGES[error] ?? "Sign-in failed, try again.") : null;
 
   return (
-    <main className="flex flex-1 items-center justify-center p-6">
+    <main className="flex flex-1 items-center justify-center px-4 py-8">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>WinLab Video</CardTitle>

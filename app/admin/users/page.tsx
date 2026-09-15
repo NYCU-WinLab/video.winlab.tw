@@ -5,6 +5,7 @@ import { AdminNav } from "@/components/admin-nav";
 import { AdminUsers, type AdminUserRow } from "@/components/admin-users";
 import { CreateUserDialog } from "@/components/create-user-dialog";
 import { SiteHeader } from "@/components/site-header";
+import { PageContainer } from "@/components/ui/page-container";
 import { isBootstrapAdmin } from "@/lib/access";
 import { db } from "@/lib/db";
 import { tags, userTags, users } from "@/lib/schema";
@@ -38,13 +39,13 @@ export default async function AdminUsersPage() {
   return (
     <>
       <SiteHeader crumb="Admin / Users" />
-      <main className="w-full flex-1 space-y-6 p-6">
+      <PageContainer className="space-y-6">
         <div className="flex items-center justify-between gap-3">
           <AdminNav current="/admin/users" />
           <CreateUserDialog />
         </div>
         <AdminUsers users={rows} tags={tagRows} />
-      </main>
+      </PageContainer>
     </>
   );
 }

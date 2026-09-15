@@ -14,7 +14,7 @@ export async function SiteHeader({
 
   return (
     <header>
-      <div className="flex w-full items-center gap-2 px-6 py-3">
+      <div className="flex w-full items-center gap-2 px-4 py-3 sm:px-6">
         <Link href="/" className="shrink-0 font-semibold">
           WinLab Video
         </Link>
@@ -24,7 +24,7 @@ export async function SiteHeader({
           </span>
         )}
         {children && (
-          <div className="flex flex-1 items-center justify-center gap-2">
+          <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
             {children}
           </div>
         )}

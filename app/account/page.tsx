@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { AccountPasskeys, type PasskeyRow } from "@/components/account-passkeys";
 import { AccountPasswordForm } from "@/components/account-password-form";
 import { SiteHeader } from "@/components/site-header";
+import { PageContainer } from "@/components/ui/page-container";
 import { findUser } from "@/lib/access";
 import { listPasskeys } from "@/lib/webauthn";
 
@@ -24,7 +25,7 @@ export default async function AccountPage() {
   return (
     <>
       <SiteHeader crumb="Account" />
-      <main className="mx-auto w-full max-w-xl flex-1 space-y-8 p-6">
+      <PageContainer className="max-w-2xl">
         <section className="space-y-3">
           <div>
             <h2 className="type-page-title">Password</h2>
@@ -51,7 +52,7 @@ export default async function AccountPage() {
           </div>
           <AccountPasskeys passkeys={passkeys} />
         </section>
-      </main>
+      </PageContainer>
     </>
   );
 }

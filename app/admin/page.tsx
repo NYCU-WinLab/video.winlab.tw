@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { AdminNav } from "@/components/admin-nav";
 import { LinkRow } from "@/components/link-row";
 import { SiteHeader } from "@/components/site-header";
+import { PageContainer } from "@/components/ui/page-container";
 import { UploadDialog } from "@/components/upload-dialog";
 import {
   Table,
@@ -56,7 +57,7 @@ export default async function AdminPage() {
   return (
     <>
       <SiteHeader crumb="Admin" />
-      <main className="w-full flex-1 space-y-6 p-6">
+      <PageContainer className="space-y-6">
         <div className="flex items-center justify-between gap-3">
           <AdminNav current="/admin" />
           <UploadDialog />
@@ -114,7 +115,7 @@ export default async function AdminPage() {
             )}
           </TableBody>
         </Table>
-      </main>
+      </PageContainer>
     </>
   );
 }

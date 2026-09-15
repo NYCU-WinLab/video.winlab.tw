@@ -35,12 +35,12 @@ export function LibraryToolbar() {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search"
-        className="h-9 rounded-full pr-10"
+        className="h-11 rounded-full pr-11"
       />
       <button
         type="submit"
         aria-label="Search"
-        className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-full text-muted-foreground hover:text-foreground"
+        className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-full text-muted-foreground hover:text-foreground"
       >
         <Search className="size-4" />
       </button>
