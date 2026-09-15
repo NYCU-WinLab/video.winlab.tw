@@ -146,16 +146,16 @@ export default async function AdminVideoPage({
                         {v.userEmail}
                       </span>
                     </TableCell>
-                    <TableCell className="font-mono">
+                    <TableCell label="First watched" className="font-mono">
                       {formatDate(v.createdAt)}
                     </TableCell>
-                    <TableCell className="font-mono">
+                    <TableCell label="Last watched" className="font-mono">
                       {formatDate(v.updatedAt)}
                     </TableCell>
-                    <TableCell className="font-mono">
+                    <TableCell label="Watched" className="font-mono">
                       {formatDuration(v.watchedSeconds)}
                     </TableCell>
-                    <TableCell className="font-mono">
+                    <TableCell label="Position" className="font-mono">
                       {formatDuration(v.position)}
                       {percent !== null && ` (${percent}%)`}
                     </TableCell>

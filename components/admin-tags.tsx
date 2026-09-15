@@ -99,13 +99,13 @@ export function AdminTags({ tags }: { tags: AdminTagRow[] }) {
                   tag.name
                 )}
               </TableCell>
-              <TableCell className="font-mono">
+              <TableCell label="Users" className="font-mono">
                 {formatCount(tag.users)}
               </TableCell>
-              <TableCell className="font-mono">
+              <TableCell label="Videos" className="font-mono">
                 {formatCount(tag.videos)}
               </TableCell>
-              <TableCell className="font-mono">
+              <TableCell label="Created" className="font-mono">
                 {formatDate(tag.createdAt)}
               </TableCell>
               <TableActionsCell>

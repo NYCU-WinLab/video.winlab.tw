@@ -14,17 +14,21 @@ export async function SiteHeader({
 
   return (
     <header>
-      <div className="flex w-full items-center gap-2 px-4 py-3 sm:px-6">
+      {/* One row on desktop: logo, crumb, centred search, user menu. On narrow
+          screens the row wraps so the search (home only) drops to its own
+          full-width line below the logo and user menu, instead of being crushed
+          into a single non-wrapping row. */}
+      <div className="flex w-full flex-wrap items-center gap-2 px-4 py-3 sm:flex-nowrap sm:px-6">
         <Link href="/" className="shrink-0 font-semibold">
           WinLab Video
         </Link>
         {crumb && (
-          <span className="truncate text-sm text-muted-foreground">
+          <span className="min-w-0 truncate text-sm text-muted-foreground">
             / {crumb}
           </span>
         )}
         {children && (
-          <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
+          <div className="order-last flex w-full min-w-0 items-center justify-center gap-2 sm:order-none sm:w-auto sm:flex-1">
             {children}
           </div>
         )}
