@@ -19,7 +19,10 @@ export async function SiteHeader({
           full-width line below the logo and user menu, instead of being crushed
           into a single non-wrapping row. */}
       <div className="flex w-full flex-wrap items-center gap-2 px-4 py-3 sm:flex-nowrap sm:px-6">
-        <Link href="/" className="shrink-0 font-semibold">
+        <Link
+          href="/"
+          className="shrink-0 rounded-md font-semibold outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
           WinLab Video
         </Link>
         {crumb && (

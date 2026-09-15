@@ -26,7 +26,7 @@ function VideoCard({ item }: { item: LibraryItem }) {
   return (
     <Link
       href={`/watch/${item.id}`}
-      className="group block rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="group block rounded-2xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
     >
       <div className="relative aspect-video overflow-hidden rounded-2xl bg-muted">
         {thumbFailed && (

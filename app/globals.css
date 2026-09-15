@@ -159,3 +159,19 @@
     @apply text-xs font-normal text-muted-foreground;
   }
 }
+/*
+ * Respect the OS "reduce motion" setting. Nearly kills every animation and
+ * transition (the skeleton shimmer, dialog/dropdown enter-exit, focus and
+ * hover transitions) and JS smooth-scroll, while leaving a visible focus ring
+ * intact. It only removes motion, never the indicator itself.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
