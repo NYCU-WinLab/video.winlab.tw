@@ -27,7 +27,9 @@ export function LibraryToolbar() {
   const { query, setQuery } = useLibraryQuery();
   return (
     <form
-      className="relative w-full max-w-md"
+      // Full width on its own row on mobile; capped and centred by the header
+      // from `sm` up.
+      className="relative w-full sm:max-w-md"
       onSubmit={(e) => e.preventDefault()}
     >
       <Input

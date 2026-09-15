@@ -87,23 +87,23 @@ export default async function AdminPage() {
                       {video.title}
                     </Link>
                   </TableCell>
-                  <TableCell className="font-mono">
+                  <TableCell label="Viewers" className="font-mono">
                     {formatCount(viewers)}
                   </TableCell>
-                  <TableCell>
+                  <TableCell label="Transcript">
                     <Badge
                       variant={status === "error" ? "destructive" : "secondary"}
                     >
                       {describeJob(status, live.get(video.id))}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
+                  <TableCell label="Visible to" className="text-muted-foreground">
                     {lockedTo.get(video.id)?.join(", ") ?? "Everyone"}
                   </TableCell>
-                  <TableCell className="font-mono">
+                  <TableCell label="Size" className="font-mono">
                     {formatBytes(video.size)}
                   </TableCell>
-                  <TableCell className="font-mono">
+                  <TableCell label="Uploaded" className="font-mono">
                     {formatDate(video.createdAt)}
                   </TableCell>
                 </LinkRow>

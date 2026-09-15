@@ -169,10 +169,10 @@ export function AccountPasskeys({ passkeys }: { passkeys: PasskeyRow[] }) {
                   passkey.name
                 )}
               </TableCell>
-              <TableCell className="font-mono">
+              <TableCell label="Added" className="font-mono">
                 {formatDate(passkey.createdAt)}
               </TableCell>
-              <TableCell className="font-mono">
+              <TableCell label="Last used" className="font-mono">
                 {passkey.lastUsedAt ? formatDate(passkey.lastUsedAt) : "never"}
               </TableCell>
               <TableActionsCell>

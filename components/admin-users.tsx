@@ -207,8 +207,8 @@ export function AdminUsers({
                   </span>
                 )}
               </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2">
+              <TableCell label="Role">
+                <div className="flex items-center gap-2 max-sm:justify-end">
                   <Badge variant={user.role === "admin" ? "default" : "secondary"}>
                     {user.role}
                   </Badge>
@@ -222,7 +222,7 @@ export function AdminUsers({
                   )}
                 </div>
               </TableCell>
-              <TableCell>
+              <TableCell label="Tags">
                 <TagPicker
                   // remount when the server sends a different set, so the row
                   // never shows tags the Edit dialog has just changed
@@ -234,7 +234,7 @@ export function AdminUsers({
                   onSave={(tagIds) => setUserTags(user.email, tagIds)}
                 />
               </TableCell>
-              <TableCell className="font-mono">
+              <TableCell label="Added" className="font-mono">
                 {formatDate(user.createdAt)}
               </TableCell>
               <TableActionsCell>
