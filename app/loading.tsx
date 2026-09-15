@@ -1,10 +1,10 @@
-import { PageContainer } from "@/components/ui/page-container";
+import { WideContainer } from "@/components/ui/wide-container";
 import { VideoLibrarySkeleton } from "@/components/video-library";
 
 export default function Loading() {
   return (
-    <PageContainer>
+    <WideContainer>
       <VideoLibrarySkeleton />
-    </PageContainer>
+    </WideContainer>
   );
 }
