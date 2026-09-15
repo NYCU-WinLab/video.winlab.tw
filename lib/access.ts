@@ -28,8 +28,8 @@ export async function findUser(email: string) {
 /**
  * The allow list row for an email, creating it for bootstrap admins. An address
  * in ADMIN_EMAILS never needs an invitation, including one added long after the
- * seed ran, and every sign-in path resolves it through here so Google and the
- * email code agree on who exists.
+ * seed ran, and every sign-in path resolves it through here so Google, password
+ * and passkey sign-in agree on who exists.
  */
 export async function allowListRow(email: string, name?: string | null) {
   const address = normalizeEmail(email);

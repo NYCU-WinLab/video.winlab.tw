@@ -1,18 +1,14 @@
 "use client";
 
-import { Trash2, UserPlus } from "lucide-react";
+import { ArrowDown, ArrowUp, MoreHorizontal, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useRef, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
-import {
-  addUser,
-  deleteUser,
-  setUserRole,
-  setUserTags,
-} from "@/app/admin/actions";
+import { deleteUser, setUserTags, updateUser } from "@/app/admin/actions";
 import { TagPicker } from "@/components/tag-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +17,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -51,6 +53,51 @@ export type AdminUserRow = {
   locked: boolean;
 };
 
+type SortKey = "user" | "role" | "added";
+type SortDirection = "asc" | "desc";
+
+/** What the "User" column shows, which is also what it sorts and filters on. */
+function userLabel(user: AdminUserRow) {
+  return (user.name ?? user.email).toLowerCase();
+}
+
+/** A column header that toggles the sort, with the direction shown as an arrow. */
+function SortableHead({
+  label,
+  column,
+  sortKey,
+  direction,
+  onSort,
+}: {
+  label: string;
+  column: SortKey;
+  sortKey: SortKey;
+  direction: SortDirection;
+  onSort: (key: SortKey) => void;
+}) {
+  const active = column === sortKey;
+  return (
+    <TableHead
+      aria-sort={active ? (direction === "asc" ? "ascending" : "descending") : "none"}
+    >
+      <Button
+        variant="ghost"
+        size="xs"
+        className="-ml-2"
+        onClick={() => onSort(column)}
+      >
+        {label}
+        {active &&
+          (direction === "asc" ? (
+            <ArrowUp data-icon="inline-end" />
+          ) : (
+            <ArrowDown data-icon="inline-end" />
+          ))}
+      </Button>
+    </TableHead>
+  );
+}
+
 export function AdminUsers({
   users,
   tags,
@@ -59,10 +106,12 @@ export function AdminUsers({
   tags: Tag[];
 }) {
   const router = useRouter();
-  const [role, setRole] = useState("member");
   const [pending, startTransition] = useTransition();
+  const [query, setQuery] = useState("");
+  const [sortKey, setSortKey] = useState<SortKey>("user");
+  const [direction, setDirection] = useState<SortDirection>("asc");
+  const [toEdit, setToEdit] = useState<AdminUserRow | null>(null);
   const [toDelete, setToDelete] = useState<AdminUserRow | null>(null);
-  const form = useRef<HTMLFormElement>(null);
 
   function run(work: () => Promise<{ ok: true } | { error: string }>, done: string) {
     startTransition(async () => {
@@ -76,71 +125,76 @@ export function AdminUsers({
     });
   }
 
+  function sortBy(key: SortKey) {
+    if (key === sortKey) {
+      setDirection(direction === "asc" ? "desc" : "asc");
+      return;
+    }
+    setSortKey(key);
+    setDirection(key === "added" ? "desc" : "asc");
+  }
+
+  const visible = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    const matches = needle
+      ? users.filter(
+          (user) =>
+            user.email.toLowerCase().includes(needle) ||
+            (user.name ?? "").toLowerCase().includes(needle),
+        )
+      : users;
+    const sign = direction === "asc" ? 1 : -1;
+    return [...matches].sort((a, b) => {
+      if (sortKey === "added") return sign * (a.createdAt - b.createdAt);
+      if (sortKey === "role") return sign * a.role.localeCompare(b.role);
+      return sign * userLabel(a).localeCompare(userLabel(b));
+    });
+  }, [users, query, sortKey, direction]);
+
   return (
     <>
-      <form
-        className="flex flex-wrap items-end gap-3"
-        ref={form}
-        action={(formData) => {
-          formData.set("role", role);
-          startTransition(async () => {
-            const result = await addUser(formData);
-            if ("error" in result) {
-              toast.error(result.error);
-              return;
-            }
-            toast.success("User added");
-            form.current?.reset();
-            setRole("member");
-            router.refresh();
-          });
-        }}
-      >
-        <div className="space-y-2">
-          <Label htmlFor="user-email">Email</Label>
-          <Input
-            id="user-email"
-            name="email"
-            type="email"
-            placeholder="member@example.com"
-            required
-            disabled={pending}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="user-name">Name (optional)</Label>
-          <Input id="user-name" name="name" disabled={pending} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="user-role">Role</Label>
-          <Select value={role} onValueChange={setRole} disabled={pending}>
-            <SelectTrigger id="user-role" className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="member">Member</SelectItem>
-              <SelectItem value="admin">Admin</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <Button type="submit" disabled={pending}>
-          <UserPlus />
-          Add user
-        </Button>
-      </form>
+      <div className="relative w-full max-w-xs">
+        <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search email or name"
+          aria-label="Search users by email or name"
+          className="pl-8"
+        />
+      </div>
 
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>User</TableHead>
-            <TableHead>Role</TableHead>
+            <SortableHead
+              label="User"
+              column="user"
+              sortKey={sortKey}
+              direction={direction}
+              onSort={sortBy}
+            />
+            <SortableHead
+              label="Role"
+              column="role"
+              sortKey={sortKey}
+              direction={direction}
+              onSort={sortBy}
+            />
             <TableHead>Tags</TableHead>
-            <TableHead>Added</TableHead>
+            <SortableHead
+              label="Added"
+              column="added"
+              sortKey={sortKey}
+              direction={direction}
+              onSort={sortBy}
+            />
             <TableHead className="w-0" />
           </TableRow>
         </TableHeader>
         <TableBody>
-          {users.map((user) => (
+          {visible.map((user) => (
             <TableRow key={user.email}>
               <TableCell>
                 {user.name ?? user.email}
@@ -155,33 +209,21 @@ export function AdminUsers({
                   <Badge variant={user.role === "admin" ? "default" : "secondary"}>
                     {user.role}
                   </Badge>
-                  {user.locked ? (
-                    <span className="text-xs text-muted-foreground">
-                      locked by ADMIN_EMAILS
-                    </span>
-                  ) : (
-                    <Button
-                      variant="ghost"
-                      size="xs"
-                      disabled={pending}
-                      onClick={() =>
-                        run(
-                          () =>
-                            setUserRole(
-                              user.email,
-                              user.role === "admin" ? "member" : "admin",
-                            ),
-                          "Role updated",
-                        )
-                      }
+                  {user.locked && (
+                    <Badge
+                      variant="outline"
+                      className="font-normal whitespace-nowrap text-muted-foreground"
                     >
-                      {user.role === "admin" ? "Make member" : "Make admin"}
-                    </Button>
+                      locked by ADMIN_EMAILS
+                    </Badge>
                   )}
                 </div>
               </TableCell>
               <TableCell>
                 <TagPicker
+                  // remount when the server sends a different set, so the row
+                  // never shows tags the Edit dialog has just changed
+                  key={user.tagIds.join(",")}
                   tags={tags}
                   selected={user.tagIds}
                   emptyLabel="No tags"
@@ -191,30 +233,52 @@ export function AdminUsers({
               </TableCell>
               <TableCell>{formatDate(user.createdAt)}</TableCell>
               <TableCell>
-                {!user.locked && (
-                  <Button
-                    variant="ghost"
-                    size="icon-xs"
-                    className="text-destructive"
-                    aria-label={`Remove ${user.email}`}
-                    disabled={pending}
-                    onClick={() => setToDelete(user)}
-                  >
-                    <Trash2 />
-                  </Button>
-                )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      aria-label={`Actions for ${user.email}`}
+                      disabled={pending}
+                    >
+                      <MoreHorizontal />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
+                    <DropdownMenuItem onSelect={() => setToEdit(user)}>
+                      Edit
+                    </DropdownMenuItem>
+                    {!user.locked && (
+                      <DropdownMenuItem
+                        variant="destructive"
+                        onSelect={() => setToDelete(user)}
+                      >
+                        Delete
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </TableCell>
             </TableRow>
           ))}
-          {users.length === 0 && (
+          {visible.length === 0 && (
             <TableRow>
               <TableCell colSpan={5} className="text-muted-foreground">
-                Nobody on the allow list yet.
+                {users.length === 0
+                  ? "Nobody on the allow list yet."
+                  : "No user matches that search."}
               </TableCell>
             </TableRow>
           )}
         </TableBody>
       </Table>
+
+      <EditUserDialog
+        key={toEdit?.email ?? "none"}
+        user={toEdit}
+        tags={tags}
+        onClose={() => setToEdit(null)}
+      />
 
       <Dialog
         open={toDelete !== null}
@@ -225,7 +289,7 @@ export function AdminUsers({
             <DialogTitle>Remove user?</DialogTitle>
             <DialogDescription>
               {toDelete?.email} loses access immediately, together with their tags
-              and any sign-in code they requested. Watch history is kept.
+              and any password reset code they requested. Watch history is kept.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -248,5 +312,125 @@ export function AdminUsers({
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function EditUserDialog({
+  user,
+  tags,
+  onClose,
+}: {
+  user: AdminUserRow | null;
+  tags: Tag[];
+  onClose: () => void;
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [name, setName] = useState(user?.name ?? "");
+  const [role, setRole] = useState(user?.role ?? "member");
+  const [tagIds, setTagIds] = useState<string[]>(user?.tagIds ?? []);
+
+  function toggleTag(tagId: string, checked: boolean) {
+    setTagIds((current) =>
+      checked ? [...current, tagId] : current.filter((id) => id !== tagId),
+    );
+  }
+
+  function save() {
+    if (!user) return;
+    startTransition(async () => {
+      const saved = await updateUser(user.email, {
+        name,
+        role: role === "admin" ? "admin" : "member",
+      });
+      if ("error" in saved) {
+        toast.error(saved.error);
+        return;
+      }
+      const tagged = await setUserTags(user.email, tagIds);
+      if ("error" in tagged) {
+        toast.error(tagged.error);
+        return;
+      }
+      toast.success("User updated");
+      onClose();
+      router.refresh();
+    });
+  }
+
+  return (
+    <Dialog
+      open={user !== null}
+      onOpenChange={(open) => {
+        if (pending) return; // don't close mid-save
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit user</DialogTitle>
+          <DialogDescription>{user?.email}</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="edit-user-name">Name (optional)</Label>
+            <Input
+              id="edit-user-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              disabled={pending}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-user-role">Role</Label>
+            <Select
+              value={role}
+              onValueChange={setRole}
+              disabled={pending || user?.locked}
+            >
+              <SelectTrigger id="edit-user-role" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="member">Member</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
+              </SelectContent>
+            </Select>
+            {user?.locked && (
+              <p className="text-xs text-muted-foreground">
+                This admin comes from ADMIN_EMAILS, so the role is fixed.
+              </p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label>Tags</Label>
+            {tags.length === 0 && (
+              <p className="text-xs text-muted-foreground">No tags yet.</p>
+            )}
+            {tags.map((tag) => (
+              <div key={tag.id} className="flex items-center gap-2">
+                <Checkbox
+                  id={`edit-user-tag-${tag.id}`}
+                  checked={tagIds.includes(tag.id)}
+                  onCheckedChange={(checked) => toggleTag(tag.id, checked === true)}
+                  disabled={pending}
+                />
+                <Label htmlFor={`edit-user-tag-${tag.id}`} className="font-normal">
+                  {tag.name}
+                </Label>
+              </div>
+            ))}
+          </div>
+          <Button
+            type="button"
+            onClick={save}
+            disabled={pending}
+            className="w-full"
+          >
+            {pending ? "Saving…" : "Save changes"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

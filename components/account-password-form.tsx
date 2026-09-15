@@ -56,7 +56,7 @@ export function AccountPasswordForm({
   }
 
   return (
-    <form onSubmit={submit} className="max-w-sm space-y-3" method="post">
+    <form onSubmit={submit} className="space-y-3" method="post">
       <input
         type="hidden"
         id="account-email"

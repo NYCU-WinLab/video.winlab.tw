@@ -1,10 +1,10 @@
 "use client";
 
-import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Check, Pencil, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { addTag, deleteTag, renameTag } from "@/app/admin/actions";
+import { deleteTag, renameTag } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,7 +15,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -35,7 +34,6 @@ export function AdminTags({ tags }: { tags: AdminTagRow[] }) {
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [toDelete, setToDelete] = useState<AdminTagRow | null>(null);
-  const form = useRef<HTMLFormElement>(null);
 
   function run(work: () => Promise<{ ok: true } | { error: string }>, done: string) {
     startTransition(async () => {
@@ -52,38 +50,6 @@ export function AdminTags({ tags }: { tags: AdminTagRow[] }) {
 
   return (
     <>
-      <form
-        className="flex flex-wrap items-end gap-3"
-        ref={form}
-        action={(formData) => {
-          startTransition(async () => {
-            const result = await addTag(formData);
-            if ("error" in result) {
-              toast.error(result.error);
-              return;
-            }
-            toast.success("Tag created");
-            form.current?.reset();
-            router.refresh();
-          });
-        }}
-      >
-        <div className="space-y-2">
-          <Label htmlFor="tag-name">Tag</Label>
-          <Input
-            id="tag-name"
-            name="name"
-            placeholder="seminar-2026"
-            required
-            disabled={pending}
-          />
-        </div>
-        <Button type="submit" disabled={pending}>
-          <Plus />
-          Create tag
-        </Button>
-      </form>
-
       <Table>
         <TableHeader>
           <TableRow>

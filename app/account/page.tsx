@@ -24,7 +24,7 @@ export default async function AccountPage() {
   return (
     <>
       <SiteHeader crumb="Account" />
-      <main className="w-full flex-1 space-y-8 p-6">
+      <main className="mx-auto w-full max-w-xl flex-1 space-y-8 p-6">
         <section className="space-y-3">
           <div>
             <h2 className="text-lg">Password</h2>
