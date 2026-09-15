@@ -95,9 +95,6 @@ export default async function AdminVideoPage({
             label="Only these tags may watch"
             onSave={setVideoTags.bind(null, video.id)}
           />
-          <span className="text-muted-foreground">
-            No tag selected means every signed-in user can watch.
-          </span>
         </section>
 
         <section className="flex flex-wrap items-center gap-3 text-sm">
