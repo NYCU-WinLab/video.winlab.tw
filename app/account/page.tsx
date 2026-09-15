@@ -27,7 +27,7 @@ export default async function AccountPage() {
       <main className="mx-auto w-full max-w-xl flex-1 space-y-8 p-6">
         <section className="space-y-3">
           <div>
-            <h2 className="text-lg">Password</h2>
+            <h2 className="type-page-title">Password</h2>
             <p className="text-sm text-muted-foreground">
               Signed in as {email}.{" "}
               {user?.passwordHash
@@ -43,7 +43,7 @@ export default async function AccountPage() {
 
         <section className="space-y-3">
           <div>
-            <h2 className="text-lg">Passkeys</h2>
+            <h2 className="type-page-title">Passkeys</h2>
             <p className="text-sm text-muted-foreground">
               Sign in with Touch ID, Windows Hello or a security key. A passkey only
               works on the site it was created on.

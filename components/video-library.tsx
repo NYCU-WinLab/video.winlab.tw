@@ -43,7 +43,7 @@ function VideoCard({ item }: { item: LibraryItem }) {
           />
         )}
         {item.duration !== null && (
-          <span className="absolute right-2 bottom-2 rounded bg-black/80 px-1.5 py-0.5 text-xs text-white">
+          <span className="absolute right-2 bottom-2 rounded bg-black/80 px-1.5 py-0.5 font-mono text-xs text-white">
             {formatDuration(item.duration)}
           </span>
         )}
@@ -59,11 +59,19 @@ function VideoCard({ item }: { item: LibraryItem }) {
       <div className="mt-3 space-y-1">
         <p className="line-clamp-2 text-sm leading-snug">{item.title}</p>
         <p className="text-xs text-muted-foreground">
-          {new Date(item.createdAt).toLocaleDateString("en-US", {
-            dateStyle: "medium",
-          })}
-          {item.position !== null &&
-            ` · Resume at ${formatDuration(item.position)}`}
+          <span className="font-mono">
+            {new Date(item.createdAt).toLocaleDateString("en-US", {
+              dateStyle: "medium",
+            })}
+          </span>
+          {item.position !== null && (
+            <>
+              {" · Resume at "}
+              <span className="font-mono">
+                {formatDuration(item.position)}
+              </span>
+            </>
+          )}
         </p>
       </div>
     </Link>

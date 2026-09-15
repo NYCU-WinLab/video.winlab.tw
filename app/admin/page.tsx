@@ -85,7 +85,7 @@ export default async function AdminPage() {
                       {video.title}
                     </Link>
                   </TableCell>
-                  <TableCell>{viewers}</TableCell>
+                  <TableCell className="font-mono">{viewers}</TableCell>
                   <TableCell>
                     <Badge
                       variant={status === "error" ? "destructive" : "secondary"}
@@ -96,8 +96,12 @@ export default async function AdminPage() {
                   <TableCell className="text-muted-foreground">
                     {lockedTo.get(video.id)?.join(", ") ?? "Everyone"}
                   </TableCell>
-                  <TableCell>{formatBytes(video.size)}</TableCell>
-                  <TableCell>{formatDate(video.createdAt)}</TableCell>
+                  <TableCell className="font-mono">
+                    {formatBytes(video.size)}
+                  </TableCell>
+                  <TableCell className="font-mono">
+                    {formatDate(video.createdAt)}
+                  </TableCell>
                 </LinkRow>
               );
             })}
