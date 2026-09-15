@@ -1,5 +1,6 @@
 "use client";
 
+import { Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -80,7 +81,10 @@ export function UploadDialog() {
       }}
     >
       <DialogTrigger asChild>
-        <Button>Upload video</Button>
+        <Button>
+          <Upload />
+          Upload video
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

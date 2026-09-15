@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { AdminNav } from "@/components/admin-nav";
 import { AdminUsers, type AdminUserRow } from "@/components/admin-users";
+import { CreateUserDialog } from "@/components/create-user-dialog";
 import { SiteHeader } from "@/components/site-header";
 import { isBootstrapAdmin } from "@/lib/access";
 import { db } from "@/lib/db";
@@ -38,11 +39,10 @@ export default async function AdminUsersPage() {
     <>
       <SiteHeader crumb="Admin / Users" />
       <main className="w-full flex-1 space-y-6 p-6">
-        <AdminNav current="/admin/users" />
-        <p className="text-sm text-muted-foreground">
-          Only these emails can sign in, with Google or with an email code. Tags
-          decide which locked videos they see.
-        </p>
+        <div className="flex items-center justify-between gap-3">
+          <AdminNav current="/admin/users" />
+          <CreateUserDialog />
+        </div>
         <AdminUsers users={rows} tags={tagRows} />
       </main>
     </>

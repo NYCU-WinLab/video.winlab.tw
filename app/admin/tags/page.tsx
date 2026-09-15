@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { AdminNav } from "@/components/admin-nav";
 import { AdminTags, type AdminTagRow } from "@/components/admin-tags";
+import { CreateTagDialog } from "@/components/create-tag-dialog";
 import { SiteHeader } from "@/components/site-header";
 import { db } from "@/lib/db";
 import { tags, userTags, videoTags } from "@/lib/schema";
@@ -29,11 +30,10 @@ export default async function AdminTagsPage() {
     <>
       <SiteHeader crumb="Admin / Tags" />
       <main className="w-full flex-1 space-y-6 p-6">
-        <AdminNav current="/admin/tags" />
-        <p className="text-sm text-muted-foreground">
-          A video with no tag is visible to everyone. A video locked to tags is
-          visible to admins and to users carrying one of those tags.
-        </p>
+        <div className="flex items-center justify-between gap-3">
+          <AdminNav current="/admin/tags" />
+          <CreateTagDialog />
+        </div>
         <AdminTags tags={rows} />
       </main>
     </>

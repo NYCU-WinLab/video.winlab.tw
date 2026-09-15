@@ -44,16 +44,22 @@ export async function addUser(formData: FormData): Promise<ActionResult> {
   return { ok: true };
 }
 
-export async function setUserRole(
+/** Name and role in one save, from the Edit user dialog. */
+export async function updateUser(
   email: string,
-  role: "admin" | "member",
+  values: { name: string; role: "admin" | "member" },
 ): Promise<ActionResult> {
   await requireAdmin();
   const address = normalizeEmail(email);
+  const name = values.name.trim();
+  const role = values.role === "admin" ? "admin" : "member";
   if (role === "member" && isBootstrapAdmin(address)) {
     return { error: "This admin comes from ADMIN_EMAILS and cannot be demoted here" };
   }
-  await db.update(users).set({ role }).where(eq(users.email, address));
+  await db
+    .update(users)
+    .set({ name: name || null, role })
+    .where(eq(users.email, address));
   refresh();
   return { ok: true };
 }
