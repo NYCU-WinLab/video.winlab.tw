@@ -27,3 +27,12 @@ export function formatDate(ms: number) {
     timeStyle: "short",
   });
 }
+
+/**
+ * The one way to render a plain count in a table (viewers, users, videos).
+ * Thousands are grouped so long lists stay readable; render it in `font-mono`
+ * like every other data token.
+ */
+export function formatCount(n: number) {
+  return n.toLocaleString("en-US");
+}

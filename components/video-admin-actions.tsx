@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -12,8 +12,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -74,13 +80,27 @@ export function VideoAdminActions({
 
   return (
     <>
-      <Dialog open={renameOpen} onOpenChange={(o) => !busy && setRenameOpen(o)}>
-        <DialogTrigger asChild>
-          <Button variant="outline" size="sm">
-            <Pencil />
-            Rename
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="icon" aria-label="Video actions">
+            <MoreHorizontal />
           </Button>
-        </DialogTrigger>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-40">
+          <DropdownMenuItem onSelect={() => setRenameOpen(true)}>
+            Rename
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            variant="destructive"
+            onSelect={() => setDeleteOpen(true)}
+          >
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <Dialog open={renameOpen} onOpenChange={(o) => !busy && setRenameOpen(o)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Rename video</DialogTitle>
@@ -105,12 +125,6 @@ export function VideoAdminActions({
       </Dialog>
 
       <Dialog open={deleteOpen} onOpenChange={(o) => !busy && setDeleteOpen(o)}>
-        <DialogTrigger asChild>
-          <Button variant="outline" size="sm" className="text-destructive">
-            <Trash2 />
-            Delete
-          </Button>
-        </DialogTrigger>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete video?</DialogTitle>

@@ -15,10 +15,11 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableEmpty,
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/components/ui/data-table";
 import { db } from "@/lib/db";
 import { formatBytes, formatDate, formatDuration } from "@/lib/format";
 import { tags, videoTags, videos, watchProgress } from "@/lib/schema";
@@ -61,7 +62,17 @@ export default async function AdminVideoPage({
     <>
       <SiteHeader crumb={`Admin / ${video.title}`} />
       <PageContainer className="space-y-6">
-        <AdminNav current="/admin" />
+        {/* Header: nav on the left, the page's primary action (Watch) on the
+            right with rename/delete tucked into the overflow menu beside it. */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <AdminNav current="/admin" />
+          <div className="flex items-center gap-2">
+            <VideoAdminActions id={video.id} title={video.title} />
+            <Button asChild>
+              <Link href={`/watch/${video.id}`}>Watch</Link>
+            </Button>
+          </div>
+        </div>
         <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
           <Badge
             variant={
@@ -78,12 +89,6 @@ export default async function AdminVideoPage({
             uploaded{" "}
             <span className="font-mono">{formatDate(video.createdAt)}</span>
           </span>
-          <div className="ml-auto flex items-center gap-2">
-            <Button asChild variant="outline" size="sm">
-              <Link href={`/watch/${video.id}`}>Watch</Link>
-            </Button>
-            <VideoAdminActions id={video.id} title={video.title} />
-          </div>
         </div>
 
         <section className="flex flex-wrap items-center gap-3 text-sm">
@@ -158,11 +163,7 @@ export default async function AdminVideoPage({
                 );
               })}
               {viewers.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-muted-foreground">
-                    Nobody has watched this yet.
-                  </TableCell>
-                </TableRow>
+                <TableEmpty colSpan={5}>Nobody has watched this yet.</TableEmpty>
               )}
             </TableBody>
           </Table>

@@ -17,13 +17,16 @@ import {
 import { Input } from "@/components/ui/input";
 import {
   Table,
+  TableActionsCell,
+  TableActionsHead,
   TableBody,
   TableCell,
+  TableEmpty,
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { formatDate } from "@/lib/format";
+} from "@/components/ui/data-table";
+import { formatCount, formatDate } from "@/lib/format";
 import type { Tag } from "@/lib/schema";
 
 export type AdminTagRow = Tag & { users: number; videos: number };
@@ -57,7 +60,7 @@ export function AdminTags({ tags }: { tags: AdminTagRow[] }) {
             <TableHead>Users</TableHead>
             <TableHead>Videos</TableHead>
             <TableHead>Created</TableHead>
-            <TableHead className="w-0" />
+            <TableActionsHead />
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -96,10 +99,16 @@ export function AdminTags({ tags }: { tags: AdminTagRow[] }) {
                   tag.name
                 )}
               </TableCell>
-              <TableCell>{tag.users}</TableCell>
-              <TableCell>{tag.videos}</TableCell>
-              <TableCell>{formatDate(tag.createdAt)}</TableCell>
-              <TableCell>
+              <TableCell className="font-mono">
+                {formatCount(tag.users)}
+              </TableCell>
+              <TableCell className="font-mono">
+                {formatCount(tag.videos)}
+              </TableCell>
+              <TableCell className="font-mono">
+                {formatDate(tag.createdAt)}
+              </TableCell>
+              <TableActionsCell>
                 <div className="flex items-center gap-1">
                   <Button
                     size="icon-xs"
@@ -124,15 +133,11 @@ export function AdminTags({ tags }: { tags: AdminTagRow[] }) {
                     <Trash2 />
                   </Button>
                 </div>
-              </TableCell>
+              </TableActionsCell>
             </TableRow>
           ))}
           {tags.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={5} className="text-muted-foreground">
-                No tags yet.
-              </TableCell>
-            </TableRow>
+            <TableEmpty colSpan={5}>No tags yet.</TableEmpty>
           )}
         </TableBody>
       </Table>

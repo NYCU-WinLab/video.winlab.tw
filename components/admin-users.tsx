@@ -34,12 +34,15 @@ import {
 } from "@/components/ui/select";
 import {
   Table,
+  TableActionsCell,
+  TableActionsHead,
   TableBody,
   TableCell,
+  TableEmpty,
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/components/ui/data-table";
 import { formatDate } from "@/lib/format";
 import type { Tag } from "@/lib/schema";
 
@@ -190,7 +193,7 @@ export function AdminUsers({
               direction={direction}
               onSort={sortBy}
             />
-            <TableHead className="w-0" />
+            <TableActionsHead />
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -231,8 +234,10 @@ export function AdminUsers({
                   onSave={(tagIds) => setUserTags(user.email, tagIds)}
                 />
               </TableCell>
-              <TableCell>{formatDate(user.createdAt)}</TableCell>
-              <TableCell>
+              <TableCell className="font-mono">
+                {formatDate(user.createdAt)}
+              </TableCell>
+              <TableActionsCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -258,17 +263,15 @@ export function AdminUsers({
                     )}
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </TableCell>
+              </TableActionsCell>
             </TableRow>
           ))}
           {visible.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={5} className="text-muted-foreground">
-                {users.length === 0
-                  ? "Nobody on the allow list yet."
-                  : "No user matches that search."}
-              </TableCell>
-            </TableRow>
+            <TableEmpty colSpan={5}>
+              {users.length === 0
+                ? "Nobody on the allow list yet."
+                : "No user matches that search."}
+            </TableEmpty>
           )}
         </TableBody>
       </Table>

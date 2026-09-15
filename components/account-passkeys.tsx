@@ -1,6 +1,6 @@
 "use client";
 
-import { KeyRound, Pencil, Trash2 } from "lucide-react";
+import { Check, KeyRound, Pencil, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
@@ -17,12 +17,15 @@ import {
 import { Input } from "@/components/ui/input";
 import {
   Table,
+  TableActionsCell,
+  TableActionsHead,
   TableBody,
   TableCell,
+  TableEmpty,
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/components/ui/data-table";
 import { formatDate } from "@/lib/format";
 
 export type PasskeyRow = {
@@ -125,7 +128,7 @@ export function AccountPasskeys({ passkeys }: { passkeys: PasskeyRow[] }) {
             <TableHead>Device</TableHead>
             <TableHead>Added</TableHead>
             <TableHead>Last used</TableHead>
-            <TableHead className="w-0" />
+            <TableActionsHead />
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -143,16 +146,23 @@ export function AccountPasskeys({ passkeys }: { passkeys: PasskeyRow[] }) {
                       autoFocus
                       disabled={busy}
                     />
-                    <Button size="sm" disabled={busy} onClick={() => rename(passkey.id)}>
-                      Save
+                    <Button
+                      size="icon-xs"
+                      variant="ghost"
+                      aria-label="Save name"
+                      disabled={busy}
+                      onClick={() => rename(passkey.id)}
+                    >
+                      <Check />
                     </Button>
                     <Button
-                      size="sm"
+                      size="icon-xs"
                       variant="ghost"
+                      aria-label="Cancel"
                       disabled={busy}
                       onClick={() => setEditing(null)}
                     >
-                      Cancel
+                      <X />
                     </Button>
                   </div>
                 ) : (
@@ -165,7 +175,7 @@ export function AccountPasskeys({ passkeys }: { passkeys: PasskeyRow[] }) {
               <TableCell className="font-mono">
                 {passkey.lastUsedAt ? formatDate(passkey.lastUsedAt) : "never"}
               </TableCell>
-              <TableCell>
+              <TableActionsCell>
                 <div className="flex items-center gap-1">
                   <Button
                     size="icon-xs"
@@ -190,15 +200,11 @@ export function AccountPasskeys({ passkeys }: { passkeys: PasskeyRow[] }) {
                     <Trash2 />
                   </Button>
                 </div>
-              </TableCell>
+              </TableActionsCell>
             </TableRow>
           ))}
           {passkeys.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={4} className="text-muted-foreground">
-                No passkeys yet.
-              </TableCell>
-            </TableRow>
+            <TableEmpty colSpan={4}>No passkeys yet.</TableEmpty>
           )}
         </TableBody>
       </Table>

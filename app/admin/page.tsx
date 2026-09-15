@@ -11,12 +11,13 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableEmpty,
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/components/ui/data-table";
 import { db } from "@/lib/db";
-import { formatBytes, formatDate } from "@/lib/format";
+import { formatBytes, formatCount, formatDate } from "@/lib/format";
 import { tags, videoTags, videos, watchProgress } from "@/lib/schema";
 import { describeJob, recentlySynced, syncPending } from "@/lib/transcribe";
 import { Badge } from "@/components/ui/badge";
@@ -86,7 +87,9 @@ export default async function AdminPage() {
                       {video.title}
                     </Link>
                   </TableCell>
-                  <TableCell className="font-mono">{viewers}</TableCell>
+                  <TableCell className="font-mono">
+                    {formatCount(viewers)}
+                  </TableCell>
                   <TableCell>
                     <Badge
                       variant={status === "error" ? "destructive" : "secondary"}
@@ -107,11 +110,7 @@ export default async function AdminPage() {
               );
             })}
             {videoRows.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={6} className="text-muted-foreground">
-                  No videos yet.
-                </TableCell>
-              </TableRow>
+              <TableEmpty colSpan={6}>No videos yet.</TableEmpty>
             )}
           </TableBody>
         </Table>
