@@ -35,7 +35,7 @@ export function TranscriptActions({
   return (
     <>
       <Button
-        variant="outline"
+        variant="ghost"
         size="sm"
         disabled={busy}
         onClick={() => router.refresh()}
