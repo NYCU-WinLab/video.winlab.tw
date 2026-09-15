@@ -2,6 +2,7 @@ import { asc, count, eq, sql } from "drizzle-orm";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { AdminNav } from "@/components/admin-nav";
 import { LinkRow } from "@/components/link-row";
 import { SiteHeader } from "@/components/site-header";
 import { UploadDialog } from "@/components/upload-dialog";
@@ -15,7 +16,7 @@ import {
 } from "@/components/ui/table";
 import { db } from "@/lib/db";
 import { formatBytes, formatDate } from "@/lib/format";
-import { videos, watchProgress } from "@/lib/schema";
+import { tags, videoTags, videos, watchProgress } from "@/lib/schema";
 import { describeJob, recentlySynced, syncPending } from "@/lib/transcribe";
 import { Badge } from "@/components/ui/badge";
 
@@ -35,6 +36,15 @@ export default async function AdminPage() {
     .groupBy(videos.id)
     .orderBy(asc(sql`lower(${videos.title})`));
 
+  const locks = await db
+    .select({ videoId: videoTags.videoId, name: tags.name })
+    .from(videoTags)
+    .innerJoin(tags, eq(tags.id, videoTags.tagId));
+  const lockedTo = new Map<string, string[]>();
+  for (const lock of locks) {
+    lockedTo.set(lock.videoId, [...(lockedTo.get(lock.videoId) ?? []), lock.name]);
+  }
+
   // Pull live status from transcribe for anything still pending; this also
   // imports finished transcripts nobody has opened yet.
   const live = recentlySynced()
@@ -47,7 +57,8 @@ export default async function AdminPage() {
     <>
       <SiteHeader crumb="Admin" />
       <main className="w-full flex-1 space-y-6 p-6">
-        <div className="flex justify-end">
+        <div className="flex items-center justify-between gap-3">
+          <AdminNav current="/admin" />
           <UploadDialog />
         </div>
         <Table>
@@ -56,6 +67,7 @@ export default async function AdminPage() {
               <TableHead>Title</TableHead>
               <TableHead>Viewers</TableHead>
               <TableHead>Transcript</TableHead>
+              <TableHead>Visible to</TableHead>
               <TableHead>Size</TableHead>
               <TableHead>Uploaded</TableHead>
             </TableRow>
@@ -81,6 +93,9 @@ export default async function AdminPage() {
                       {describeJob(status, live.get(video.id))}
                     </Badge>
                   </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {lockedTo.get(video.id)?.join(", ") ?? "Everyone"}
+                  </TableCell>
                   <TableCell>{formatBytes(video.size)}</TableCell>
                   <TableCell>{formatDate(video.createdAt)}</TableCell>
                 </LinkRow>
@@ -88,7 +103,7 @@ export default async function AdminPage() {
             })}
             {videoRows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-muted-foreground">
+                <TableCell colSpan={6} className="text-muted-foreground">
                   No videos yet.
                 </TableCell>
               </TableRow>

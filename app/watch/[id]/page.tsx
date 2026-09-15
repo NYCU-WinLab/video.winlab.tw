@@ -3,6 +3,7 @@ import { and, asc, eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { SiteHeader } from "@/components/site-header";
 import { WatchView } from "@/components/watch-view";
+import { canView } from "@/lib/access";
 import { db } from "@/lib/db";
 import { transcriptSegments, videos, watchProgress } from "@/lib/schema";
 
@@ -19,6 +20,7 @@ export default async function WatchPage({
 
   const [video] = await db.select().from(videos).where(eq(videos.id, id));
   if (!video) notFound();
+  if (!(await canView(email, session?.user.isAdmin ?? false, id))) notFound();
 
   const [progress] = await db
     .select()

@@ -1,5 +1,6 @@
 import { asc, eq } from "drizzle-orm";
 import { auth } from "@/auth";
+import { canView } from "@/lib/access";
 import { db } from "@/lib/db";
 import { transcriptSegments, videos } from "@/lib/schema";
 import { refreshTranscription } from "@/lib/transcribe";
@@ -16,6 +17,9 @@ export async function GET(
   const { id } = await params;
   let [video] = await db.select().from(videos).where(eq(videos.id, id));
   if (!video) return Response.json({ error: "not found" }, { status: 404 });
+  if (!(await canView(session.user.email, session.user.isAdmin, id))) {
+    return Response.json({ error: "forbidden" }, { status: 403 });
+  }
 
   if (video.transcriptStatus === "pending") {
     await refreshTranscription(video);
