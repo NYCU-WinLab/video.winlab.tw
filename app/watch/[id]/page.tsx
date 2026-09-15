@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { SiteHeader } from "@/components/site-header";
-import { PageContainer } from "@/components/ui/page-container";
+import { WideContainer } from "@/components/ui/wide-container";
 import { WatchView } from "@/components/watch-view";
 import { canView } from "@/lib/access";
 import { db } from "@/lib/db";
@@ -47,7 +47,7 @@ export default async function WatchPage({
   return (
     <>
       <SiteHeader crumb={video.title} />
-      <PageContainer className="flex flex-col">
+      <WideContainer className="flex min-h-0 flex-col">
         <WatchView
           videoId={video.id}
           src={`/api/stream/${video.id}`}
@@ -57,7 +57,7 @@ export default async function WatchPage({
           transcriptError={video.transcriptError}
           segments={segments}
         />
-      </PageContainer>
+      </WideContainer>
     </>
   );
 }
