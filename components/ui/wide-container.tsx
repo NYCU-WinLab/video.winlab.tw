@@ -3,7 +3,8 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 
 /**
- * Wider sibling of {@link PageContainer} used only by the home video wall.
+ * Wider sibling of {@link PageContainer} used by the home video wall and the
+ * player page (which passes `max-w-none` to span the whole window).
  *
  * The wall intentionally opts out of the shared `max-w-5xl` shell: a YouTube
  * style wall wants to fill wide desktops so the auto-filling grid keeps cards
