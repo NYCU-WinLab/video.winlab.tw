@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { SiteHeader } from "@/components/site-header";
-import { WideContainer } from "@/components/ui/wide-container";
+import { PageContainer } from "@/components/ui/page-container";
 import { WatchView } from "@/components/watch-view";
 import { canView } from "@/lib/access";
 import { db } from "@/lib/db";
@@ -45,13 +45,12 @@ export default async function WatchPage({
       : [];
 
   // On desktop the page is exactly one viewport tall: header on top, then the
-  // player row fills the rest with no page scroll and spans the full window
-  // width (no max-width, so wide monitors get no side margins). Narrow screens keep the
+  // player row fills the rest with no page scroll. Narrow screens keep the
   // normal stacked flow (video, then transcript) and scroll as usual.
   return (
     <div className="flex flex-1 flex-col lg:h-dvh">
       <SiteHeader crumb={video.title} />
-      <WideContainer className="flex min-h-0 max-w-none flex-col lg:py-4">
+      <PageContainer className="flex min-h-0 flex-col lg:py-4">
         <WatchView
           videoId={video.id}
           src={`/api/stream/${video.id}`}
@@ -61,7 +60,7 @@ export default async function WatchPage({
           transcriptError={video.transcriptError}
           segments={segments}
         />
-      </WideContainer>
+      </PageContainer>
     </div>
   );
 }
