@@ -95,7 +95,7 @@ function VideoCardSkeleton() {
 /** Placeholder card grid shown while the library loads (see `app/loading.tsx`). */
 export function VideoLibrarySkeleton({ count = 8 }: { count?: number }) {
   return (
-    <div className="grid gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-x-4 gap-y-8 min-[480px]:grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
       {Array.from({ length: count }, (_, i) => (
         <VideoCardSkeleton key={i} />
       ))}
@@ -134,7 +134,7 @@ export function VideoLibrary({ items }: { items: LibraryItem[] }) {
   }
 
   return (
-    <div className="grid gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-x-4 gap-y-8 min-[480px]:grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
       {filtered.map((item) => (
         <VideoCard key={item.id} item={item} />
       ))}

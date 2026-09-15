@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { LibraryProvider, LibraryToolbar } from "@/components/library-toolbar";
 import { SiteHeader } from "@/components/site-header";
-import { PageContainer } from "@/components/ui/page-container";
+import { WideContainer } from "@/components/ui/wide-container";
 import { VideoLibrary, type LibraryItem } from "@/components/video-library";
 import { viewableVideoIds } from "@/lib/access";
 import { db } from "@/lib/db";
@@ -48,9 +48,9 @@ export default async function HomePage() {
       <SiteHeader>
         <LibraryToolbar />
       </SiteHeader>
-      <PageContainer>
+      <WideContainer>
         <VideoLibrary items={items} />
-      </PageContainer>
+      </WideContainer>
     </LibraryProvider>
   );
 }
