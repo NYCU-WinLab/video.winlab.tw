@@ -42,7 +42,7 @@ export function LibraryToolbar() {
       <button
         type="submit"
         aria-label="Search"
-        className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-full text-muted-foreground hover:text-foreground"
+        className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-full text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
       >
         <Search className="size-4" />
       </button>

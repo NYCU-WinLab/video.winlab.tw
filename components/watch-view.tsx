@@ -155,7 +155,7 @@ export function WatchView({
                 type="button"
                 onClick={() => seekRef.current?.(seg.start)}
                 className={cn(
-                  "flex w-full gap-3 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent",
+                  "flex w-full gap-3 rounded-md px-2 py-1.5 text-left text-sm outline-none transition-colors hover:bg-accent focus-visible:relative focus-visible:z-10 focus-visible:ring-3 focus-visible:ring-ring/50",
                   i === activeIdx && "bg-accent",
                 )}
               >

@@ -82,7 +82,7 @@ export default async function AdminPage() {
                   <TableCell>
                     <Link
                       href={`/admin/videos/${video.id}`}
-                      className="hover:underline"
+                      className="rounded-sm outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
                     >
                       {video.title}
                     </Link>
