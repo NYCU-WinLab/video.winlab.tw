@@ -54,7 +54,7 @@ export async function updateUser(
   const name = values.name.trim();
   const role = values.role === "admin" ? "admin" : "member";
   if (role === "member" && isBootstrapAdmin(address)) {
-    return { error: "This admin comes from ADMIN_EMAILS and cannot be demoted here" };
+    return { error: "This admin comes from server config and cannot be demoted here" };
   }
   await db
     .update(users)
@@ -70,7 +70,7 @@ export async function deleteUser(email: string): Promise<ActionResult> {
   // ADMIN_EMAILS is the bootstrap source of admins: deleting such a row only
   // takes effect until their next sign-in, so refuse instead of pretending.
   if (isBootstrapAdmin(address)) {
-    return { error: "This admin comes from ADMIN_EMAILS and cannot be removed here" };
+    return { error: "This admin comes from server config and cannot be removed here" };
   }
   await db.delete(userTags).where(eq(userTags.userEmail, address));
   await db.delete(loginCodes).where(eq(loginCodes.email, address));

@@ -214,7 +214,7 @@ export function AdminUsers({
                       variant="outline"
                       className="font-normal whitespace-nowrap text-muted-foreground"
                     >
-                      locked by ADMIN_EMAILS
+                      Protected admin
                     </Badge>
                   )}
                 </div>
@@ -398,7 +398,7 @@ function EditUserDialog({
             </Select>
             {user?.locked && (
               <p className="text-xs text-muted-foreground">
-                This admin comes from ADMIN_EMAILS, so the role is fixed.
+                This admin comes from server config, so the role is fixed.
               </p>
             )}
           </div>
