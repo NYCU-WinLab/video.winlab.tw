@@ -313,6 +313,7 @@ export function SignInCard({ googleAction }: { googleAction: () => Promise<void>
               pattern="\d{6}"
               maxLength={6}
               placeholder="123456"
+              className="font-mono"
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
               required

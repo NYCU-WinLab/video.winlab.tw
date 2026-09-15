@@ -69,11 +69,14 @@ export default async function AdminVideoPage({
           >
             {describeJob(video.transcriptStatus, live)}
           </Badge>
-          <span>{formatBytes(video.size)}</span>
-          <span>
+          <span className="font-mono">{formatBytes(video.size)}</span>
+          <span className="font-mono">
             {video.duration ? formatDuration(video.duration) : "unknown length"}
           </span>
-          <span>uploaded {formatDate(video.createdAt)}</span>
+          <span>
+            uploaded{" "}
+            <span className="font-mono">{formatDate(video.createdAt)}</span>
+          </span>
           <div className="ml-auto flex items-center gap-2">
             <Button asChild variant="outline" size="sm">
               <Link href={`/watch/${video.id}`}>Watch</Link>
@@ -116,7 +119,7 @@ export default async function AdminVideoPage({
         </section>
 
         <section>
-          <h2 className="mb-3 text-lg">Viewers</h2>
+          <h2 className="type-section mb-3">Viewers</h2>
           <Table>
             <TableHeader>
               <TableRow>
@@ -140,10 +143,16 @@ export default async function AdminVideoPage({
                         {v.userEmail}
                       </span>
                     </TableCell>
-                    <TableCell>{formatDate(v.createdAt)}</TableCell>
-                    <TableCell>{formatDate(v.updatedAt)}</TableCell>
-                    <TableCell>{formatDuration(v.watchedSeconds)}</TableCell>
-                    <TableCell>
+                    <TableCell className="font-mono">
+                      {formatDate(v.createdAt)}
+                    </TableCell>
+                    <TableCell className="font-mono">
+                      {formatDate(v.updatedAt)}
+                    </TableCell>
+                    <TableCell className="font-mono">
+                      {formatDuration(v.watchedSeconds)}
+                    </TableCell>
+                    <TableCell className="font-mono">
                       {formatDuration(v.position)}
                       {percent !== null && ` (${percent}%)`}
                     </TableCell>

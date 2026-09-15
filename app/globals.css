@@ -7,9 +7,14 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-mono);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-geist-mono);
+  --font-sans:
+    var(--font-geist-sans), "PingFang TC", "Noto Sans TC", "Microsoft JhengHei",
+    sans-serif;
+  --font-mono:
+    var(--font-geist-mono), ui-monospace, "SFMono-Regular", "Menlo", monospace;
+  --font-heading:
+    var(--font-geist-sans), "PingFang TC", "Noto Sans TC", "Microsoft JhengHei",
+    sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -126,5 +131,31 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+/*
+ * Type scale - four reusable levels for text hierarchy. Each level is set
+ * apart by size AND weight, not size alone, so the ranking reads even when
+ * sizes are close. Prose defaults to the sans body; only data tokens
+ * (durations, timestamps, sizes, IDs, codes) opt into `font-mono`.
+ *
+ *   .type-page-title  page/section headings (e.g. account "Password")
+ *   .type-section     sub-section headings inside a page (e.g. "Viewers")
+ *   .type-body        default body copy
+ *   .type-caption     captions / metadata
+ */
+@layer components {
+  .type-page-title {
+    @apply font-heading text-2xl font-semibold tracking-tight;
+  }
+  .type-section {
+    @apply font-heading text-lg font-semibold tracking-tight;
+  }
+  .type-body {
+    @apply text-sm font-normal;
+  }
+  .type-caption {
+    @apply text-xs font-normal text-muted-foreground;
   }
 }
