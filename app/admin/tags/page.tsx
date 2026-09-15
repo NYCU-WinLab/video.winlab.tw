@@ -5,6 +5,7 @@ import { AdminNav } from "@/components/admin-nav";
 import { AdminTags, type AdminTagRow } from "@/components/admin-tags";
 import { CreateTagDialog } from "@/components/create-tag-dialog";
 import { SiteHeader } from "@/components/site-header";
+import { PageContainer } from "@/components/ui/page-container";
 import { db } from "@/lib/db";
 import { tags, userTags, videoTags } from "@/lib/schema";
 
@@ -29,13 +30,13 @@ export default async function AdminTagsPage() {
   return (
     <>
       <SiteHeader crumb="Admin / Tags" />
-      <main className="w-full flex-1 space-y-6 p-6">
+      <PageContainer className="space-y-6">
         <div className="flex items-center justify-between gap-3">
           <AdminNav current="/admin/tags" />
           <CreateTagDialog />
         </div>
         <AdminTags tags={rows} />
-      </main>
+      </PageContainer>
     </>
   );
 }

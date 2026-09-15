@@ -7,6 +7,7 @@ import { setVideoTags } from "@/app/admin/actions";
 import { AdminNav } from "@/components/admin-nav";
 import { TagPicker } from "@/components/tag-picker";
 import { SiteHeader } from "@/components/site-header";
+import { PageContainer } from "@/components/ui/page-container";
 import { VideoAdminActions } from "@/components/video-admin-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,7 +60,7 @@ export default async function AdminVideoPage({
   return (
     <>
       <SiteHeader crumb={`Admin / ${video.title}`} />
-      <main className="w-full flex-1 space-y-6 p-6">
+      <PageContainer className="space-y-6">
         <AdminNav current="/admin" />
         <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
           <Badge
@@ -169,7 +170,7 @@ export default async function AdminVideoPage({
             </TableBody>
           </Table>
         </section>
-      </main>
+      </PageContainer>
     </>
   );
 }
