@@ -44,10 +44,13 @@ export default async function WatchPage({
           .orderBy(asc(transcriptSegments.idx))
       : [];
 
+  // On desktop the page is exactly one viewport tall: header on top, then the
+  // player row fills the rest with no page scroll. Narrow screens keep the
+  // normal stacked flow (video, then transcript) and scroll as usual.
   return (
-    <>
+    <div className="flex flex-1 flex-col lg:h-dvh">
       <SiteHeader crumb={video.title} />
-      <WideContainer className="flex min-h-0 flex-col">
+      <WideContainer className="flex min-h-0 flex-col lg:py-4">
         <WatchView
           videoId={video.id}
           src={`/api/stream/${video.id}`}
@@ -58,6 +61,6 @@ export default async function WatchPage({
           segments={segments}
         />
       </WideContainer>
-    </>
+    </div>
   );
 }

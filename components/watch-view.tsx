@@ -123,17 +123,19 @@ export function WatchView({
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 lg:h-[calc(100dvh-6.5rem)] lg:min-h-0 lg:flex-none lg:flex-row">
-      <div className="min-w-0 flex-1">
-        <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-black lg:max-h-full">
-          <VideoPlayer
-            videoId={videoId}
-            src={src}
-            initialPosition={initialPosition}
-            onTimeChange={setCurrentTime}
-            registerSeek={registerSeek}
-          />
-        </div>
+    // Desktop: one row, video left and transcript right, both exactly the
+    // height the page hands us (the parent is a flex column capped at the
+    // viewport). The video box drops its 16:9 ratio and letterboxes inside,
+    // so the two columns always share the same height and never overflow.
+    <div className="flex flex-1 flex-col gap-4 lg:min-h-0 lg:flex-row">
+      <div className="relative aspect-video w-full min-w-0 overflow-hidden rounded-lg bg-black lg:aspect-auto lg:h-full lg:flex-1">
+        <VideoPlayer
+          videoId={videoId}
+          src={src}
+          initialPosition={initialPosition}
+          onTimeChange={setCurrentTime}
+          registerSeek={registerSeek}
+        />
       </div>
 
       <aside className="flex h-[45vh] min-h-0 flex-col rounded-lg border lg:h-full lg:w-[26rem] lg:shrink-0">
