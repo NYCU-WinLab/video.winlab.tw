@@ -15,7 +15,7 @@ shown next to the player, clickable to seek.
 |-------|--------|
 | Framework | Next.js (App Router) + TypeScript |
 | UI | shadcn/ui + Tailwind CSS |
-| Auth | Auth.js (NextAuth v5): Google OAuth or emailed sign-in code, JWT sessions |
+| Auth | Auth.js (NextAuth v5): password, passkey (WebAuthn) or Google OAuth, JWT sessions |
 | Database | SQLite via Drizzle ORM (better-sqlite3) |
 | Video storage | Nextcloud WebDAV (`video-svc` service account) |
 | Thumbnails, duration | ffmpeg / ffprobe on the host, cached under `THUMB_DIR` |
@@ -23,7 +23,7 @@ shown next to the player, clickable to seek.
 
 ## Access
 
-- The `users` table is the allow list. Both sign-in paths go through it: an
+- The `users` table is the allow list. Every sign-in method goes through it: an
   email that is not listed is rejected with "This email is not on the allow
   list, ask an admin" on `/login`. Removing someone ends their session on
   their next request.
@@ -39,10 +39,30 @@ shown next to the player, clickable to seek.
   in; a video locked to tags is visible to admins and to users carrying one of
   those tags. The rule is enforced on the home list, the watch page and the
   stream, thumbnail, transcript and progress APIs, not just in the UI.
-- Email sign-in: `/login` asks for an email, `POST /api/auth/pin/request`
-  mails a 6-digit code (sha256-hashed in `login_codes`, valid 10 minutes, 5
-  requests per email per hour, 5 guesses per code), and the `email-pin`
-  credentials provider checks it.
+- Sign-in methods: **password**, **passkey** and **Google**. All three end in
+  the same allow list check, so adding a method never widens access.
+- Passwords are hashed with `scrypt` (N=2^15, r=8, p=1, 16-byte salt) from Node
+  core, stored as `scrypt$N$r$p$salt$hash` in `users.password_hash`. They must
+  be 8 to 128 characters and may not be the email address itself. Ten failed
+  attempts pause an email for 15 minutes (`login_attempts`).
+- The mailed 6-digit code is **not** a sign-in method. It only proves that
+  someone owns an address so they can set or reset a password:
+  `POST /api/auth/pin/request` mails it (sha256-hashed in `login_codes`, valid
+  10 minutes, one mail per minute per address, 10 per hour, 5 guesses per code)
+  and `POST /api/auth/password/reset` exchanges code plus new password.
+- Passkeys are discoverable WebAuthn credentials (`@simplewebauthn`). Register
+  them on `/account`, sign in with the passkey button or through the browser's
+  autofill on `/login`. The relying party id is the hostname from `AUTH_URL`,
+  so a passkey registered on `video.winlab.tw` does not work on a preview URL
+  or on localhost, and each host needs its own registration. A verified
+  assertion hands out a single-use ticket that the `passkey` credentials
+  provider exchanges for a session, and the allow list is checked again at that
+  moment, so removing a user kills their passkeys too.
+- `/account` is where a signed-in user changes their password and adds, renames
+  or removes passkeys. `/.well-known/change-password` redirects there for
+  password managers. The forms are plain HTML forms with the standard
+  `autocomplete` tokens, so 1Password, iCloud Keychain and Chrome fill and
+  update them.
 
 ## How it works
 
@@ -87,10 +107,11 @@ Production runs on PVE VM 114 as the `video` systemd service. Merging to
 ssh video 'cd /opt/video/app && git pull && ~/.bun/bin/bun install && ~/.bun/bin/bun run build && sudo systemctl restart video'
 ```
 
-Email sign-in needs `SMTP_USER` and `SMTP_PASS` (and optionally `SMTP_HOST`,
-`SMTP_PORT`, `MAIL_FROM`) in `/opt/video/app/.env` before the restart, and the
-deploy must run `bun install` because `nodemailer` is a new dependency.
-Without SMTP credentials the app refuses to hand out codes in production.
+Password set and reset mails need `SMTP_USER` and `SMTP_PASS` (and optionally
+`SMTP_HOST`, `SMTP_PORT`, `MAIL_FROM`) in `/opt/video/app/.env`, and `AUTH_URL`
+must be the public URL because passkeys are bound to its hostname. The deploy
+must run `bun install` for `nodemailer` and `@simplewebauthn/*`. Without SMTP
+credentials the app refuses to hand out codes in production.
 
 ## Development
 

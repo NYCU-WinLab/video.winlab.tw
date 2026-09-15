@@ -24,11 +24,23 @@ export async function POST(req: Request) {
 
   const issued = await issueLoginCode(email);
   if (!issued.ok) {
+    if (issued.reason === "cooldown") {
+      return Response.json(
+        {
+          error: `a code was just sent, try again in ${issued.retryAfterSeconds} seconds`,
+          retryAfterSeconds: issued.retryAfterSeconds,
+        },
+        {
+          status: 429,
+          headers: { "retry-after": String(issued.retryAfterSeconds) },
+        },
+      );
+    }
     return Response.json(
       {
         error: `too many codes requested, try again later (limit ${MAX_REQUESTS_PER_HOUR} per hour)`,
       },
-      { status: 429 },
+      { status: 429, headers: { "retry-after": "3600" } },
     );
   }
 

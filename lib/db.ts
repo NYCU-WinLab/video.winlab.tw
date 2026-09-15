@@ -95,7 +95,48 @@ function createDb(): BetterSQLite3Database<typeof schema> {
       created_at INTEGER NOT NULL
     );
     CREATE INDEX IF NOT EXISTS login_codes_email_idx ON login_codes (email);
+    CREATE TABLE IF NOT EXISTS login_attempts (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL,
+      created_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS login_attempts_email_idx ON login_attempts (email);
+    CREATE TABLE IF NOT EXISTS passkeys (
+      id TEXT PRIMARY KEY,
+      user_email TEXT NOT NULL REFERENCES users(email) ON DELETE CASCADE,
+      public_key TEXT NOT NULL,
+      counter INTEGER NOT NULL DEFAULT 0,
+      transports TEXT,
+      device_type TEXT,
+      backed_up INTEGER NOT NULL DEFAULT 0,
+      name TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      last_used_at INTEGER
+    );
+    CREATE INDEX IF NOT EXISTS passkeys_user_idx ON passkeys (user_email);
+    CREATE TABLE IF NOT EXISTS webauthn_challenges (
+      id TEXT PRIMARY KEY,
+      challenge TEXT NOT NULL,
+      email TEXT,
+      kind TEXT NOT NULL,
+      expires_at INTEGER NOT NULL,
+      created_at INTEGER NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS signin_tickets (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL,
+      method TEXT NOT NULL,
+      expires_at INTEGER NOT NULL,
+      used_at INTEGER,
+      created_at INTEGER NOT NULL
+    );
   `);
+  const userCols = (
+    sqlite.prepare("PRAGMA table_info(users)").all() as { name: string }[]
+  ).map((c) => c.name);
+  if (!userCols.includes("password_hash")) {
+    sqlite.exec("ALTER TABLE users ADD COLUMN password_hash TEXT;");
+  }
   seedUsers(sqlite);
   return drizzle(sqlite, { schema });
 }

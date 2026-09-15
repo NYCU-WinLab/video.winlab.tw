@@ -7,7 +7,9 @@ import { loginCodes } from "@/lib/schema";
 export const CODE_TTL_MS = 10 * 60 * 1000;
 export const MAX_ATTEMPTS = 5;
 /** Requests per email per hour. */
-export const MAX_REQUESTS_PER_HOUR = 5;
+export const MAX_REQUESTS_PER_HOUR = 10;
+/** Minimum gap between two mails to the same address. */
+export const CODE_COOLDOWN_MS = 60 * 1000;
 const RATE_WINDOW_MS = 60 * 60 * 1000;
 const RETENTION_MS = 24 * 60 * 60 * 1000;
 
@@ -24,18 +26,24 @@ function sameHash(a: string, b: string) {
   return left.length === right.length && timingSafeEqual(left, right);
 }
 
-/** Issues a code, or reports the rate limit. Callers must check the allow list
- * first: this helper does not decide who is allowed to sign in. */
-export async function issueLoginCode(
-  email: string,
-): Promise<{ ok: true; code: string } | { ok: false; reason: "rate_limited" }> {
+export type IssuedCode =
+  | { ok: true; code: string }
+  | { ok: false; reason: "rate_limited" }
+  | { ok: false; reason: "cooldown"; retryAfterSeconds: number };
+
+/** Issues a verification code, or reports why not. Callers must check the allow
+ * list first: this helper does not decide who is allowed to sign in. */
+export async function issueLoginCode(email: string): Promise<IssuedCode> {
   const address = normalizeEmail(email);
   const now = Date.now();
 
   await db.delete(loginCodes).where(lt(loginCodes.createdAt, now - RETENTION_MS));
 
-  const [{ recent }] = await db
-    .select({ recent: sql<number>`count(*)` })
+  const [{ recent, latest }] = await db
+    .select({
+      recent: sql<number>`count(*)`,
+      latest: sql<number | null>`max(${loginCodes.createdAt})`,
+    })
     .from(loginCodes)
     .where(
       and(
@@ -44,6 +52,17 @@ export async function issueLoginCode(
       ),
     );
   if (recent >= MAX_REQUESTS_PER_HOUR) return { ok: false, reason: "rate_limited" };
+
+  // One mail per minute: enough to re-send after a typo, little enough that the
+  // inbox cannot be used as a mail bomb.
+  const since = latest === null ? Number.POSITIVE_INFINITY : now - latest;
+  if (since < CODE_COOLDOWN_MS) {
+    return {
+      ok: false,
+      reason: "cooldown",
+      retryAfterSeconds: Math.max(1, Math.ceil((CODE_COOLDOWN_MS - since) / 1000)),
+    };
+  }
 
   // Only the newest code is live. Retiring the older ones keeps a stale code
   // from a previous email out of the verification path entirely.

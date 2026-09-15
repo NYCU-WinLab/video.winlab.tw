@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, CircleUser, LogOut, Shield } from "lucide-react";
+import { ChevronDown, CircleUser, LogOut, Settings, Shield } from "lucide-react";
 import Link from "next/link";
 import { ThemeMenuItems } from "@/components/theme-menu-items";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,13 @@ export function UserMenu({ name, isAdmin, signOutAction }: Props) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        <DropdownMenuItem asChild>
+          <Link href="/account">
+            <Settings className="size-4" />
+            Account
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         {isAdmin && (
           <>
             <DropdownMenuItem asChild>

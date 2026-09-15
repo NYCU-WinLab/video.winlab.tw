@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth, signIn } from "@/auth";
-import { EmailPinForm } from "@/components/email-pin-form";
-import { Button } from "@/components/ui/button";
+import { SignInCard } from "@/components/sign-in-card";
 import {
   Card,
   CardContent,
@@ -13,7 +12,7 @@ import { NOT_ALLOWED } from "@/lib/login-codes";
 
 const MESSAGES: Record<string, string> = {
   AccessDenied: NOT_ALLOWED,
-  CredentialsSignin: "That code is wrong or has expired.",
+  CredentialsSignin: "Wrong email or password.",
   Verification: "That sign-in link is no longer valid.",
 };
 
@@ -26,16 +25,16 @@ export default async function LoginPage({
   if (session) redirect("/");
 
   const { error } = await searchParams;
-  const message = error
-    ? (MESSAGES[error] ?? "Sign-in failed, try again.")
-    : null;
+  const message = error ? (MESSAGES[error] ?? "Sign-in failed, try again.") : null;
 
   return (
     <main className="flex flex-1 items-center justify-center p-6">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>WinLab Video</CardTitle>
-          <CardDescription>Sign in to watch lab videos.</CardDescription>
+          <CardDescription>
+            Sign in with your password, a passkey or Google.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {message && (
@@ -46,22 +45,12 @@ export default async function LoginPage({
               {message}
             </p>
           )}
-          <form
-            action={async () => {
+          <SignInCard
+            googleAction={async () => {
               "use server";
               await signIn("google", { redirectTo: "/" });
             }}
-          >
-            <Button type="submit" className="w-full">
-              Sign in with Google
-            </Button>
-          </form>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <span className="h-px flex-1 bg-border" />
-            or
-            <span className="h-px flex-1 bg-border" />
-          </div>
-          <EmailPinForm />
+          />
         </CardContent>
       </Card>
     </main>
