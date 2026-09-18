@@ -47,8 +47,11 @@ export default async function WatchPage({
   // On desktop the page is exactly one viewport tall: header on top, then the
   // player row fills the rest with no page scroll. Narrow screens keep the
   // normal stacked flow (video, then transcript) and scroll as usual.
+  // `lg:flex-none` matters: as a `flex-1` item of the body, the height comes
+  // from flexing an auto-height body, which Chromium treats as indefinite, so
+  // the player's `h-full` resolved to 0 there (Safari resolved it anyway).
   return (
-    <div className="flex flex-1 flex-col lg:h-dvh">
+    <div className="flex flex-1 flex-col lg:h-dvh lg:flex-none">
       <SiteHeader crumb={video.title} />
       <PageContainer className="flex min-h-0 flex-col lg:py-4">
         <WatchView
