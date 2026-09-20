@@ -11,7 +11,18 @@ const baseUrl = () =>
     "",
   );
 
-type JobCreate = { job_id: string; owner_token: string };
+/** Optional transcribe app token (`tk_…`). With it every call is made as a
+ * service caller: higher upload/duration caps, 3 concurrent jobs instead of
+ * the anonymous 1, and jobs are owned by the token's account, so transcribe
+ * returns no per-job owner_token and reads must carry the bearer instead. */
+const serviceToken = () => process.env.TRANSCRIBE_TOKEN?.trim() || null;
+
+function authHeaders(): Record<string, string> {
+  const token = serviceToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+type JobCreate = { job_id: string; owner_token: string | null };
 type JobStatus = {
   stage: string;
   progress: number;
@@ -50,6 +61,7 @@ export async function submitTranscription(video: Video) {
     const res = await fetch(`${baseUrl()}/api/jobs`, {
       method: "POST",
       headers: {
+        ...authHeaders(),
         "Content-Type": `multipart/form-data; boundary=${boundary}`,
       },
       body: Readable.toWeb(Readable.from(concat())) as ReadableStream,
@@ -66,7 +78,7 @@ export async function submitTranscription(video: Video) {
       .set({
         transcriptStatus: "pending",
         transcriptJobId: job.job_id,
-        transcriptToken: job.owner_token,
+        transcriptToken: job.owner_token ?? null,
         transcriptError: null,
       })
       .where(eq(videos.id, video.id));
@@ -88,12 +100,14 @@ export type JobLive = {
 };
 
 /** Job ids are only valid when the submit response actually carried one;
- * an older API version left the literal string "undefined" behind. */
+ * an older API version left the literal string "undefined" behind. A job
+ * is reachable with its per-job owner token, or with the service token when
+ * one is configured (service-submitted jobs never get an owner token). */
 export function hasJob(video: Pick<Video, "transcriptJobId" | "transcriptToken">) {
   return (
     !!video.transcriptJobId &&
     video.transcriptJobId !== "undefined" &&
-    !!video.transcriptToken
+    (!!video.transcriptToken || serviceToken() !== null)
   );
 }
 
@@ -134,10 +148,13 @@ async function refreshOnce(video: Video): Promise<JobLive | null> {
       .where(eq(videos.id, video.id));
     return null;
   }
-  const qs = `owner_token=${encodeURIComponent(video.transcriptToken!)}`;
+  const qs = video.transcriptToken
+    ? `?owner_token=${encodeURIComponent(video.transcriptToken)}`
+    : "";
   let res: Response;
   try {
-    res = await fetch(`${baseUrl()}/api/jobs/${video.transcriptJobId}?${qs}`, {
+    res = await fetch(`${baseUrl()}/api/jobs/${video.transcriptJobId}${qs}`, {
+      headers: authHeaders(),
       signal: AbortSignal.timeout(8000),
     });
   } catch {
@@ -179,8 +196,8 @@ async function refreshOnce(video: Video): Promise<JobLive | null> {
   let trRes: Response;
   try {
     trRes = await fetch(
-      `${baseUrl()}/api/jobs/${video.transcriptJobId}/transcript.json?${qs}`,
-      { signal: AbortSignal.timeout(30_000) },
+      `${baseUrl()}/api/jobs/${video.transcriptJobId}/transcript.json${qs}`,
+      { headers: authHeaders(), signal: AbortSignal.timeout(30_000) },
     );
   } catch {
     return live;
