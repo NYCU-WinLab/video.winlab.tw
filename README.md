@@ -73,7 +73,10 @@ shown next to the player, clickable to seek.
 - Upload (`POST /api/videos`, admin only, 2 GB cap) streams the file to
   Nextcloud at `files/video-svc/videos/<id>-<name>`, records metadata in
   SQLite, then in the background probes the duration with ffprobe, renders a
-  thumbnail, and submits the file to transcribe.winlab.tw.
+  thumbnail, and submits the file to transcribe.winlab.tw. Set
+  `TRANSCRIBE_TOKEN` to submit as a service caller (larger caps, three
+  concurrent jobs); otherwise submissions are anonymous and limited to one
+  job at a time per IP.
 - Thumbnails (`GET /api/thumb/:id`) are generated on first request with
   ffmpeg reading straight from WebDAV and cached as JPEG under `THUMB_DIR`.
   A failed render is remembered for 24 h so a broken file cannot spawn
