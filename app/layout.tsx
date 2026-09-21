@@ -32,6 +32,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         <ThemeProvider>
           {children}
+          {/* Floating copyright, pinned to the bottom-right corner on every
+              page. Non-interactive and below the toaster so it never blocks
+              a control or a notification. */}
+          <footer
+            aria-label="Copyright"
+            className="pointer-events-none fixed right-4 bottom-3 z-40 text-xs text-muted-foreground select-none sm:right-6"
+          >
+            © 2026 WinLab
+          </footer>
           <Toaster />
         </ThemeProvider>
       </body>
