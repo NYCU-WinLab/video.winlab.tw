@@ -37,7 +37,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               a control or a notification. */}
           <footer
             aria-label="Copyright"
-            className="pointer-events-none fixed right-4 bottom-3 z-40 text-xs text-muted-foreground select-none sm:right-6"
+            className="pointer-events-none fixed right-4 bottom-4 z-40 text-sm text-muted-foreground select-none sm:right-6 sm:bottom-6"
           >
             © 2026 WinLab
           </footer>

@@ -25,7 +25,7 @@ export function UserMenu({ name, isAdmin, signOutAction }: Props) {
         <Button
           variant="ghost"
           size="sm"
-          className="h-11 max-w-[9rem] sm:max-w-xs"
+          className="h-11 max-w-[9rem] text-sm sm:max-w-xs"
         >
           <CircleUser className="size-4" />
           <span className="min-w-0 truncate">{name}</span>

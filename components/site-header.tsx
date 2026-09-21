@@ -21,7 +21,7 @@ export async function SiteHeader({
       <div className="flex w-full flex-wrap items-center gap-2 px-4 py-3 sm:flex-nowrap sm:px-6">
         <Link
           href="/"
-          className="shrink-0 rounded-md font-semibold outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="shrink-0 rounded-md text-sm font-semibold outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           WinLab Video
         </Link>
