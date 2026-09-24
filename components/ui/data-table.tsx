@@ -21,6 +21,7 @@ import {
  *   `formatDuration`, `formatBytes`). Never hand-format a date or number.
  * - Row controls use the compact button sizes (`icon-xs`, `xs`, `sm`); the
  *   44px touch target is for a page's primary action, not dense table rows.
+ *   An inline edit row pairs its `h-8` Input with `icon-sm` buttons.
  * - The trailing actions column uses `TableActionsHead` / `TableActionsCell`.
  * - Empty tables render a single `TableEmpty` row instead of an empty body.
  *
