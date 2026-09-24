@@ -147,7 +147,7 @@ export function AccountPasskeys({ passkeys }: { passkeys: PasskeyRow[] }) {
                       disabled={busy}
                     />
                     <Button
-                      size="icon-xs"
+                      size="icon-sm"
                       variant="ghost"
                       aria-label="Save name"
                       disabled={busy}
@@ -156,7 +156,7 @@ export function AccountPasskeys({ passkeys }: { passkeys: PasskeyRow[] }) {
                       <Check />
                     </Button>
                     <Button
-                      size="icon-xs"
+                      size="icon-sm"
                       variant="ghost"
                       aria-label="Cancel"
                       disabled={busy}

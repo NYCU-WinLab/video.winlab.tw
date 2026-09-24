@@ -58,7 +58,7 @@ export default async function AdminPage() {
   return (
     <>
       <SiteHeader crumb="Admin" />
-      <PageContainer className="space-y-6">
+      <PageContainer>
         <div className="flex items-center justify-between gap-3">
           <AdminNav current="/admin" />
           <UploadDialog />

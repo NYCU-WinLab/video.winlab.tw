@@ -39,7 +39,7 @@ export default async function AdminUsersPage() {
   return (
     <>
       <SiteHeader crumb="Admin / Users" />
-      <PageContainer className="space-y-6">
+      <PageContainer>
         <div className="flex items-center justify-between gap-3">
           <AdminNav current="/admin/users" />
           <CreateUserDialog />

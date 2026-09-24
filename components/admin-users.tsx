@@ -408,7 +408,7 @@ function EditUserDialog({
           <div className="space-y-2">
             <Label>Tags</Label>
             {tags.length === 0 && (
-              <p className="text-xs text-muted-foreground">No tags yet.</p>
+              <p className="type-caption">No tags yet.</p>
             )}
             {tags.map((tag) => (
               <div key={tag.id} className="flex items-center gap-2">
