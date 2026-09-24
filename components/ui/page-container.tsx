@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils"
  * itself through `className` (e.g. `max-w-2xl`) and stays left-aligned; the home
  * wall's auto-filling grid handles wide screens by adding columns. Pass
  * `flex flex-col` for pages that need a column layout (e.g. the player).
+ * Pages keep the default `space-y-8` rhythm; don't override it per page.
+ * The one exception is /login, which centers its card on its own `<main>`.
  */
 function PageContainer({
   className,

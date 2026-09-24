@@ -77,7 +77,7 @@ export function AdminTags({ tags }: { tags: AdminTagRow[] }) {
                       disabled={pending}
                     />
                     <Button
-                      size="icon-xs"
+                      size="icon-sm"
                       variant="ghost"
                       aria-label="Save name"
                       disabled={pending}
@@ -86,7 +86,7 @@ export function AdminTags({ tags }: { tags: AdminTagRow[] }) {
                       <Check />
                     </Button>
                     <Button
-                      size="icon-xs"
+                      size="icon-sm"
                       variant="ghost"
                       aria-label="Cancel"
                       disabled={pending}

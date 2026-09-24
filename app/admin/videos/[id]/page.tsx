@@ -61,7 +61,7 @@ export default async function AdminVideoPage({
   return (
     <>
       <SiteHeader crumb={`Admin / ${video.title}`} />
-      <PageContainer className="space-y-6">
+      <PageContainer>
         {/* Header: nav on the left, the page's primary action (Watch) on the
             right with rename/delete tucked into the overflow menu beside it. */}
         <div className="flex flex-wrap items-center justify-between gap-3">

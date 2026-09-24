@@ -28,8 +28,11 @@ import { cn } from "@/lib/utils"
  *   keep destructive/rename actions in a `⋯` menu so the primary stands alone.
  * - Dialogs: the primary action goes in the footer on the right; `Cancel`
  *   (outline) sits to its left. A destructive confirm uses `destructive` there.
- * - The primary action keeps the 44px `default`/`lg` size; only dense table
- *   controls drop to `sm`/`xs`/`icon-xs`.
+ * - The primary action keeps the 44px `default`/`lg` size. Dense table
+ *   controls drop to `sm`/`xs`/`icon-xs`, and secondary actions inside a
+ *   content panel (transcript actions, tag picker, empty-state retry) use `sm`.
+ * - Controls on one row share a height: an `h-8` Input pairs with `sm` or
+ *   `icon-sm` buttons, never `icon-xs`.
  */
 const buttonVariants = cva(
   "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
