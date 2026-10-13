@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, signIn } from "@/auth";
 import { SignInCard } from "@/components/sign-in-card";
@@ -28,7 +29,7 @@ export default async function LoginPage({
   const message = error ? (MESSAGES[error] ?? "Sign-in failed, try again.") : null;
 
   return (
-    <main className="flex flex-1 items-center justify-center px-4 py-8">
+    <main className="flex flex-1 flex-col items-center justify-center gap-4 px-4 py-8">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>WinLab Video</CardTitle>
@@ -53,6 +54,12 @@ export default async function LoginPage({
           />
         </CardContent>
       </Card>
+      <Link
+        href="/manual"
+        className="rounded-md text-sm text-muted-foreground underline-offset-4 outline-none hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+      >
+        第一次登入？看教學
+      </Link>
     </main>
   );
 }
