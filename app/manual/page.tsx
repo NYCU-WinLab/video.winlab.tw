@@ -63,7 +63,7 @@ export default function ManualPage() {
           前往登入
         </Link>
       </header>
-      <PageContainer lang="zh-Hant" className="max-w-3xl">
+      <PageContainer lang="zh-Hant" className="mx-auto max-w-3xl">
         <section className="space-y-2">
           <h1 className="type-page-title">第一次登入</h1>
           <p className="text-sm text-muted-foreground">
