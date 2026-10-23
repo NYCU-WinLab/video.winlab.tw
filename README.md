@@ -104,9 +104,9 @@ shown next to the player, clickable to seek.
 ## Deploy
 
 Production runs on the Carrel machine `video` (tenant `winfra`) as the `video`
-systemd service. Carrel publishes it at `video.winfra.winlab.tw`, and the lab
-gateway proxies `video.winlab.tw` to that name. Merging to `main` does not
-deploy; run:
+systemd service. Carrel serves `video.winlab.tw` directly as a special domain
+of the tenant, with its own certificate. Merging to `main` does not deploy;
+run:
 
 ```sh
 ssh video.winfra 'cd /opt/video/app && git pull && ~/.bun/bin/bun install && ~/.bun/bin/bun run build && sudo systemctl restart video'
