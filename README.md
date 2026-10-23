@@ -103,12 +103,16 @@ shown next to the player, clickable to seek.
 
 ## Deploy
 
-Production runs on PVE VM 114 as the `video` systemd service. Merging to
-`main` does not deploy; run:
+Production runs on the Carrel machine `video` (tenant `winfra`) as the `video`
+systemd service. Carrel publishes it at `video.winfra.winlab.tw`, and the lab
+gateway proxies `video.winlab.tw` to that name. Merging to `main` does not
+deploy; run:
 
 ```sh
-ssh video 'cd /opt/video/app && git pull && ~/.bun/bin/bun install && ~/.bun/bin/bun run build && sudo systemctl restart video'
+ssh video.winfra 'cd /opt/video/app && git pull && ~/.bun/bin/bun install && ~/.bun/bin/bun run build && sudo systemctl restart video'
 ```
+
+`ssh video.winfra` is the SSH alias that Carrel returns for the machine.
 
 Password set and reset mails need `SMTP_USER` and `SMTP_PASS` (and optionally
 `SMTP_HOST`, `SMTP_PORT`, `MAIL_FROM`) in `/opt/video/app/.env`, and `AUTH_URL`
