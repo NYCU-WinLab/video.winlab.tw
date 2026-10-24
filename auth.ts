@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import Keycloak from "next-auth/providers/keycloak";
-import { allowListRow, isBootstrapAdmin } from "@/lib/access";
+import { admitLabMember, allowListRow, inLabMemberGroup, isBootstrapAdmin } from "@/lib/access";
 import { checkPassword } from "@/lib/password";
 import { consumeSigninTicket } from "@/lib/webauthn";
 
@@ -58,8 +58,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async signIn({ user, account, profile }) {
       // Keycloak users can edit their own email, so an unverified address
       // could claim someone else's allow list entry.
-      if (account?.provider === "keycloak" && profile?.email_verified !== true) {
-        return false;
+      if (account?.provider === "keycloak") {
+        if (profile?.email_verified !== true) return false;
+        // Lab members are on the allow list by being in the Keycloak group.
+        if (inLabMemberGroup(profile.groups)) {
+          await admitLabMember(user.email ?? "", user.name);
+        }
       }
       return (await allowListRow(user.email ?? "", user.name)) !== null;
     },

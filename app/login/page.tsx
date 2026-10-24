@@ -34,7 +34,9 @@ export default async function LoginPage({
         <CardHeader>
           <CardTitle>WinLab Video</CardTitle>
           <CardDescription>
-            Sign in with WinLab, your password, a passkey or Google.
+            {keycloakEnabled
+              ? "Sign in with WinLab, your password, a passkey or Google."
+              : "Sign in with your password, a passkey or Google."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

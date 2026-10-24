@@ -41,9 +41,14 @@ shown next to the player, clickable to seek.
   stream, thumbnail, transcript and progress APIs, not just in the UI.
 - Sign-in methods: **password**, **passkey**, **Google** and **WinLab**
   (Keycloak at `auth.winlab.tw`, realm `winlab`, client `video`). All four end
-  in the same allow list check, so adding a method never widens access.
-  Keycloak sign-ins also need a verified email, because Keycloak users can
-  edit their own address.
+  in the same allow list check. Keycloak sign-ins also need a verified email,
+  because Keycloak users can edit their own address.
+- Lab members need no invitation: a verified Keycloak user in `/lab-member` or
+  any of its subgroups (alumni included) is added to the allow list as a
+  member on WinLab sign-in. The `video` client has its own group mapper that
+  puts full paths in the `groups` claim. Leaving the group later does not remove
+  the row; an admin removes it on `/admin/users`, and the next WinLab sign-in
+  adds it back while the person is still in the group.
 - Passwords are hashed with `scrypt` (N=2^15, r=8, p=1, 16-byte salt) from Node
   core, stored as `scrypt$N$r$p$salt$hash` in `users.password_hash`. They must
   be 8 to 128 characters and may not be the email address itself. Ten failed
