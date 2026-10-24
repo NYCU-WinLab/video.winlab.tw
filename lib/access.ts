@@ -55,6 +55,37 @@ export async function allowListRow(email: string, name?: string | null) {
   return (await findUser(address)) ?? row;
 }
 
+/** Keycloak group whose members may sign in without an invitation. Members
+ * sit in its subgroups (`/lab-member/114`, `/lab-member/alumni`, ...), and the
+ * `video` client puts full group paths in the `groups` claim. */
+export const LAB_MEMBER_GROUP = "/lab-member";
+
+export function inLabMemberGroup(groups: unknown) {
+  return (
+    Array.isArray(groups) &&
+    groups.some(
+      (g) =>
+        typeof g === "string" &&
+        (g === LAB_MEMBER_GROUP || g.startsWith(`${LAB_MEMBER_GROUP}/`)),
+    )
+  );
+}
+
+/**
+ * Adds a WinLab Keycloak lab member to the allow list as a member. Called only
+ * after the Keycloak ID token proved a verified email and the group, so the
+ * row is as trustworthy as an admin's invitation. An existing row is kept as
+ * it is, role included.
+ */
+export async function admitLabMember(email: string, name?: string | null) {
+  const address = normalizeEmail(email);
+  if (!address) return;
+  await db
+    .insert(users)
+    .values({ email: address, name: name ?? null, role: "member", createdAt: Date.now() })
+    .onConflictDoNothing();
+}
+
 /** Tags the viewer carries. Kept out of the JWT on purpose: an admin change
  * has to take effect on the next request, not on the next sign-in. */
 export async function tagsOfUser(email: string) {

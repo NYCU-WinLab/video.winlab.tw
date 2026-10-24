@@ -1,13 +1,18 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
-import { allowListRow, isBootstrapAdmin } from "@/lib/access";
+import Keycloak from "next-auth/providers/keycloak";
+import { admitLabMember, allowListRow, inLabMemberGroup, isBootstrapAdmin } from "@/lib/access";
 import { checkPassword } from "@/lib/password";
 import { consumeSigninTicket } from "@/lib/webauthn";
+
+// WinLab Keycloak (auth.winlab.tw) is offered only when its client is configured.
+export const keycloakEnabled = Boolean(process.env.AUTH_KEYCLOAK_ID);
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Google,
+    ...(keycloakEnabled ? [Keycloak] : []),
     Credentials({
       id: "password",
       name: "Password",
@@ -50,7 +55,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   // that explains itself instead of on the Auth.js default page.
   pages: { signIn: "/login", error: "/login" },
   callbacks: {
-    async signIn({ user }) {
+    async signIn({ user, account, profile }) {
+      // Keycloak users can edit their own email, so an unverified address
+      // could claim someone else's allow list entry.
+      if (account?.provider === "keycloak") {
+        if (profile?.email_verified !== true) return false;
+        // Lab members are on the allow list by being in the Keycloak group.
+        if (inLabMemberGroup(profile.groups)) {
+          await admitLabMember(user.email ?? "", user.name);
+        }
+      }
       return (await allowListRow(user.email ?? "", user.name)) !== null;
     },
     async jwt({ token }) {

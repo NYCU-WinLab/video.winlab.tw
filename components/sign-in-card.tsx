@@ -30,7 +30,13 @@ async function readError(res: Response, fallback: string) {
   }
 }
 
-export function SignInCard({ googleAction }: { googleAction: () => Promise<void> }) {
+export function SignInCard({
+  keycloakAction,
+  googleAction,
+}: {
+  keycloakAction?: () => Promise<void>;
+  googleAction: () => Promise<void>;
+}) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("password");
   const [email, setEmail] = useState("");
@@ -400,6 +406,14 @@ export function SignInCard({ googleAction }: { googleAction: () => Promise<void>
           <KeyRound />
           Sign in with a passkey
         </Button>
+      )}
+
+      {keycloakAction && (
+        <form action={keycloakAction}>
+          <Button type="submit" variant="outline" className="w-full">
+            Sign in with WinLab
+          </Button>
+        </form>
       )}
 
       <form action={googleAction}>
