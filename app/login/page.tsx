@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { auth, signIn } from "@/auth";
+import { auth, keycloakEnabled, signIn } from "@/auth";
 import { SignInCard } from "@/components/sign-in-card";
 import {
   Card,
@@ -34,7 +34,7 @@ export default async function LoginPage({
         <CardHeader>
           <CardTitle>WinLab Video</CardTitle>
           <CardDescription>
-            Sign in with your password, a passkey or Google.
+            Sign in with WinLab, your password, a passkey or Google.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -47,6 +47,14 @@ export default async function LoginPage({
             </p>
           )}
           <SignInCard
+            keycloakAction={
+              keycloakEnabled
+                ? async () => {
+                    "use server";
+                    await signIn("keycloak", { redirectTo: "/" });
+                  }
+                : undefined
+            }
             googleAction={async () => {
               "use server";
               await signIn("google", { redirectTo: "/" });
