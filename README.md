@@ -111,11 +111,11 @@ shown next to the player, clickable to seek.
 
 ## Deploy
 
-Production runs on PVE VM 114 as the `video` systemd service. Merging to
+Production runs on the Carrel VM `video` (tenant winfra) as the `video` systemd service. Merging to
 `main` does not deploy; run:
 
 ```sh
-ssh video 'cd /opt/video/app && git pull && ~/.bun/bin/bun install && ~/.bun/bin/bun run build && sudo systemctl restart video'
+ssh video.winfra 'cd /opt/video/app && git pull && ~/.bun/bin/bun install && ~/.bun/bin/bun run build && sudo systemctl restart video'
 ```
 
 Password set and reset mails need `SMTP_USER` and `SMTP_PASS` (and optionally
