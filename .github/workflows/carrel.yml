@@ -1,0 +1,38 @@
+name: carrel
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: carrel-${{ github.ref }}
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  # Builds the Next standalone server and sends it to Carrel as a release
+  # of winfra/video. carrel-deployd on the machine switches to it and rolls
+  # back if http://127.0.0.1:3000/ stops answering.
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # The machine runs node 24; better-sqlite3 is built for this ABI.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - run: |
+          cp -r .next/static .next/standalone/.next/
+          cp -r public .next/standalone/
+          tar czf "$RUNNER_TEMP/video.tar.gz" -C .next/standalone .
+      - uses: NYCU-WinLab/carrel-deploy@v1
+        with:
+          tenant: winfra
+          app: video
+          artifact: ${{ runner.temp }}/video.tar.gz
