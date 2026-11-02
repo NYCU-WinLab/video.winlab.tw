@@ -111,17 +111,14 @@ shown next to the player, clickable to seek.
 
 ## Deploy
 
-Production runs on the Carrel VM `video` (tenant winfra) as the `video` systemd service. Merging to
-`main` does not deploy; run:
-
-```sh
-ssh video.winfra 'cd /opt/video/app && git pull && ~/.bun/bin/bun install && ~/.bun/bin/bun run build && sudo systemctl restart video'
-```
+Production runs on the Carrel VM `video` (tenant winfra) as the Carrel app `winfra/video`.
+Every push to `main` deploys: [.github/workflows/carrel.yml](.github/workflows/carrel.yml) builds
+the Next standalone server with node 24 and sends it to Carrel; carrel-deployd on the machine runs
+`node server.js` and rolls back if the new release does not answer. The data stays in `/opt/video/data`.
 
 Password set and reset mails need `SMTP_USER` and `SMTP_PASS` (and optionally
-`SMTP_HOST`, `SMTP_PORT`, `MAIL_FROM`) in `/opt/video/app/.env`, and `AUTH_URL`
-must be the public URL because passkeys are bound to its hostname. The deploy
-must run `bun install` for `nodemailer` and `@simplewebauthn/*`. Without SMTP
+`SMTP_HOST`, `SMTP_PORT`, `MAIL_FROM`) in `/srv/apps/video/env`, and `AUTH_URL`
+must be the public URL because passkeys are bound to its hostname. Without SMTP
 credentials the app refuses to hand out codes in production.
 
 ## Development
