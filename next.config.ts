@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Carrel deploys .next/standalone (see .github/workflows/carrel.yml).
+  // The image runs .next/standalone (see Dockerfile).
   output: "standalone",
   serverExternalPackages: ["better-sqlite3"],
   // Uploads pass through the proxy (middleware) to /api/videos; default cap

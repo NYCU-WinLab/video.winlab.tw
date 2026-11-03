@@ -1,0 +1,27 @@
+name: ${COMPOSE_PROJECT_NAME:-video}
+
+services:
+  web:
+    image: ghcr.io/nycu-winlab/video.winlab.tw:${VIDEO_VERSION:-main}
+    restart: unless-stopped
+    init: true
+    # Next waits for open streams on SIGTERM; cut them short.
+    stop_grace_period: 3s
+    env_file: ${VIDEO_ENV_FILE:-/srv/apps/video/env}
+    environment:
+      DATABASE_PATH: /data/app.db
+    volumes:
+      # The SQLite database and the thumbnails, owned by uid 1000.
+      - ${VIDEO_DATA:-/opt/video/data}:/data
+    ports:
+      - ${VIDEO_BIND:-0.0.0.0}:${VIDEO_PORT:-3000}:3000
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - fetch('http://localhost:3000/api/health').then(r=>process.exit(r.status<500?0:1),()=>process.exit(1))
+      interval: 10s
+      retries: 10
+      start_period: 60s
+      start_interval: 1s
