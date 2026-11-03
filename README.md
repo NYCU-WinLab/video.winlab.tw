@@ -112,12 +112,15 @@ shown next to the player, clickable to seek.
 ## Deploy
 
 Production runs on the Carrel VM `video` (tenant winfra) as the Carrel app `winfra/video`.
-Every push to `main` deploys: [.github/workflows/carrel.yml](.github/workflows/carrel.yml) builds
-the Next standalone server with node 24 and sends it to Carrel; carrel-deployd on the machine runs
-`node server.js` and rolls back if the new release does not answer. The data stays in `/opt/video/data`.
+ci builds the image on every pull request and smoke-tests it ([deploy/smoke.sh](deploy/smoke.sh)).
+A push to `main` retags that image and deploys it ([.github/workflows/release.yml](.github/workflows/release.yml),
+through the shared workflows in `zyx1121/.github`). carrel-deployd on the machine runs
+[deploy/carrel-start.sh](deploy/carrel-start.sh), which starts the Compose stack in `/opt/video`
+and rolls back if the container is unhealthy. The unit needs `Type=notify` and `NotifyAccess=all`.
+The data stays in `/opt/video/data`, mounted at `/data`.
 
 Password set and reset mails need `SMTP_USER` and `SMTP_PASS` (and optionally
-`SMTP_HOST`, `SMTP_PORT`, `MAIL_FROM`) in `/srv/apps/video/env`, and `AUTH_URL`
+`SMTP_HOST`, `SMTP_PORT`, `MAIL_FROM`) in `/srv/apps/video/env` (the container reads it), and `AUTH_URL`
 must be the public URL because passkeys are bound to its hostname. Without SMTP
 credentials the app refuses to hand out codes in production.
 
