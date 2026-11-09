@@ -266,11 +266,12 @@ export function describeJob(status: string, live: JobLive | null | undefined) {
   return `${live.stage} · ${Math.round(live.progress * 100)}%`;
 }
 
-/** Reachability check for /api/health: any HTTP answer counts as up. */
+/** Reachability check for /api/health: asks transcribe's own health
+ * endpoint. OPTIONS on /api/jobs answered 405 when healthy and a stray 500
+ * now and then, which showed up as an error span. */
 export async function transcribePing(timeoutMs = 5000) {
   try {
-    const res = await fetch(`${baseUrl()}/api/jobs`, {
-      method: "OPTIONS",
+    const res = await fetch(`${baseUrl()}/api/health`, {
       signal: AbortSignal.timeout(timeoutMs),
     });
     await res.body?.cancel();
