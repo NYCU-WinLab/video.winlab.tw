@@ -4,11 +4,9 @@ const nextConfig: NextConfig = {
   // The image runs .next/standalone (see Dockerfile).
   output: "standalone",
   serverExternalPackages: ["better-sqlite3"],
-  // Uploads pass through the proxy (middleware) to /api/videos; default cap
-  // is 10 MB. Keep in sync with MAX_UPLOAD_BYTES in lib/limits.ts.
-  experimental: {
-    proxyClientMaxBodySize: "2gb",
-  },
+  // No proxyClientMaxBodySize: the proxy buffers every request body it
+  // matches up to that size, before it checks the session. Uploads to
+  // /api/videos bypass the proxy (see proxy.ts), so the 10 MB default stays.
 };
 
 export default nextConfig;

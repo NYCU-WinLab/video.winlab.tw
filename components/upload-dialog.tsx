@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from "@/lib/limits";
+import { MAX_TITLE_LENGTH, MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from "@/lib/limits";
 import { cn } from "@/lib/utils";
 
 export function UploadDialog() {
@@ -27,10 +27,15 @@ export function UploadDialog() {
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  function upload(form: FormData) {
+  // The body is the raw file; the server streams it to storage instead of
+  // parsing a multipart form in memory.
+  function upload(file: File, title: string) {
     return new Promise<void>((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open("POST", "/api/videos");
+      xhr.setRequestHeader("X-Video-Title", encodeURIComponent(title));
+      xhr.setRequestHeader("X-File-Name", encodeURIComponent(file.name));
+      xhr.setRequestHeader("Content-Type", file.type || "video/mp4");
       xhr.upload.onprogress = (e) => {
         if (e.lengthComputable) {
           setPercent(Math.round((e.loaded / e.total) * 100));
@@ -50,7 +55,7 @@ export function UploadDialog() {
         }
       };
       xhr.onerror = () => reject(new Error("network error during upload"));
-      xhr.send(form);
+      xhr.send(file);
     });
   }
 
@@ -58,14 +63,23 @@ export function UploadDialog() {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     const file = form.get("file");
-    if (file instanceof File && file.size > MAX_UPLOAD_BYTES) {
+    const title = form.get("title");
+    if (!(file instanceof File) || !file.size || typeof title !== "string" || !title.trim()) {
+      toast.error("File and title are required");
+      return;
+    }
+    if (title.trim().length > MAX_TITLE_LENGTH) {
+      toast.error(`Title is longer than ${MAX_TITLE_LENGTH} characters`);
+      return;
+    }
+    if (file.size > MAX_UPLOAD_BYTES) {
       toast.error(`File is larger than the ${MAX_UPLOAD_LABEL} upload limit`);
       return;
     }
     setUploading(true);
     setPercent(0);
     try {
-      await upload(form);
+      await upload(file, title.trim());
       toast.success("Video uploaded");
       setOpen(false);
       router.refresh();
@@ -98,7 +112,13 @@ export function UploadDialog() {
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="title">Title</Label>
-            <Input id="title" name="title" required disabled={uploading} />
+            <Input
+              id="title"
+              name="title"
+              required
+              maxLength={MAX_TITLE_LENGTH}
+              disabled={uploading}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="file">
