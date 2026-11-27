@@ -15,8 +15,11 @@ export default auth((req) => {
   }
 });
 
+// POST /api/videos (the upload) is not matched: the proxy would buffer the
+// whole body before it runs. That route checks the session itself before it
+// reads the body.
 export const config = {
   matcher: [
-    "/((?!api/auth|api/health|login|manual|\\.well-known|_next/static|_next/image|icon\\.png$|apple-icon\\.png$).*)",
+    "/((?!api/auth|api/health|api/videos$|login|manual|\\.well-known|_next/static|_next/image|icon\\.png$|apple-icon\\.png$).*)",
   ],
 };

@@ -75,10 +75,13 @@ shown next to the player, clickable to seek.
 ## How it works
 
 - `proxy.ts` (the Next.js 16 name for middleware) requires a session on every
-  page and API route except `/login`, the auth callbacks and `/api/health`.
+  page and API route except `/login`, the auth callbacks, `/api/health` and
+  the upload `/api/videos`, which checks the session before it reads the body.
   `/admin` additionally requires an admin. Every API route re-checks the
   session itself.
-- Upload (`POST /api/videos`, admin only, 2 GB cap) streams the file to
+- Upload (`POST /api/videos`, admin only, 2 GB cap) takes the raw file as the
+  body (title and file name in the URI-encoded `X-Video-Title` and
+  `X-File-Name` headers, a `Content-Length` is required) and streams it to
   Nextcloud at `files/video-svc/videos/<id>-<name>`, records metadata in
   SQLite, then in the background probes the duration with ffprobe, renders a
   thumbnail, and submits the file to transcribe.winlab.tw. Set
@@ -139,10 +142,12 @@ production URL) registered as an authorized redirect URI.
 
 - Videos should be H.264 MP4 with the moov atom up front for instant
   progressive playback: `ffmpeg -i in.mp4 -c copy -movflags +faststart out.mp4`.
-- Upload buffers through the app process, so the cap is 2 GB
-  (`lib/limits.ts` and `proxyClientMaxBodySize` in `next.config.ts`). For
-  larger files upload directly to the Nextcloud folder and insert the
-  metadata row manually.
+- Upload is capped at 2 GB (`lib/limits.ts`). The route checks the session
+  and the declared size before it reads the body, and `POST /api/videos` is
+  left out of the proxy matcher in `proxy.ts`, because the proxy buffers the
+  body of every request it matches (up to the 10 MB default) before it checks
+  the session. For larger files upload directly to the Nextcloud folder and
+  insert the metadata row manually.
 - The host needs `ffmpeg` and `ffprobe` (7.0 or newer, for `-/headers`).
 - SQLite lives at `DATABASE_PATH` (default `./data/app.db`); the schema is
   created automatically on first run.
